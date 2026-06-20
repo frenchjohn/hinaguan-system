@@ -1,0 +1,102 @@
+/* Hinaguan Nature Park — Reservation Page */
+
+:root {
+    --rp-green-dark: #1a3a1f;
+    --rp-green: #2d5a34;
+    --rp-green-light: #4a7c59;
+    --rp-gold: #c9a227;
+    --rp-gold-light: #e8c547;
+    --rp-cream: #f7f5f0;
+    --rp-text: #2c3e2d;
+    --rp-text-muted: #5a6b5c;
+    --rp-font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+}
+
+.rp-page {
+    min-height: 100vh;
+    background: var(--rp-cream);
+    color: var(--rp-text);
+    font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+.rp-main {
+    min-height: 100vh;
+    padding: 6rem 1.5rem 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rp-container {
+    max-width: 36rem;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.rp-label {
+    display: inline-block;
+    color: var(--rp-green-light);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+}
+
+.rp-title {
+    font-family: var(--rp-font-display);
+    font-size: clamp(2rem, 5vw, 2.5rem);
+    font-weight: 700;
+    color: var(--rp-text);
+    margin: 0 0 1rem;
+    letter-spacing: 0.02em;
+}
+
+.rp-desc {
+    font-size: 1.0625rem;
+    color: var(--rp-text-muted);
+    line-height: 1.7;
+    margin: 0 0 2rem;
+}
+
+.rp-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.rp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.625rem 1.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.rp-btn--primary {
+    background: var(--rp-gold);
+    color: var(--rp-green-dark);
+    border-color: var(--rp-gold);
+    font-weight: 600;
+}
+
+.rp-btn--primary:hover {
+    background: var(--rp-gold-light);
+    border-color: var(--rp-gold-light);
+}
+
+.rp-btn--outline {
+    color: var(--rp-green);
+    background: transparent;
+    border-color: var(--rp-green);
+}
+
+.rp-btn--outline:hover {
+    background: rgba(45, 90, 52, 0.08);
+}

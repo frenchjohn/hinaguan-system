@@ -22,6 +22,17 @@ return new class extends Migration
             $table->string('owner');
             $table->integer('expiration')->index();
         });
+
+        Schema::create('amenities', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->string('amenities_name');
+            $table->string('daytime_price');
+            $table->string('nighttime_price');
+            $table->string('daytime_aircon_price')->nullable();
+            $table->string('nighttime_aircon_price')->nullable();
+            $table->string('description')->nullable();
+            $table->string('image')->nullable();
+        });
     }
 
     /**
@@ -31,5 +42,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('cache');
         Schema::dropIfExists('cache_locks');
+        Schema::dropIfExists('amenities');
     }
 };
