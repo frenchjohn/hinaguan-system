@@ -2,7 +2,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('amenityModal');
     const openButtons = document.querySelectorAll('[data-open-amenity-modal]');
     const closeButtons = document.querySelectorAll('[data-close-amenity-modal]');
-    const amenityRows = document.querySelectorAll('.amenity-row');
+    const amenityRows = Array.from(document.querySelectorAll('.amenity-row'));
+    const amenitySearch = document.getElementById('amenitySearch');
+    const amenitySortColumn = document.getElementById('amenitySortColumn');
+    const amenitySortOrder = document.getElementById('amenitySortOrder');
+    const amenityStatus = document.getElementById('amenityStatus');
     const form = document.getElementById('amenityForm');
     const modalTitle = document.getElementById('amenityModalTitle');
     const submitButton = document.getElementById('amenitySubmitButton');
@@ -15,6 +19,9 @@ document.addEventListener('DOMContentLoaded', function () {
         nighttime_price: document.getElementById('nighttime_price'),
         daytime_aircon_price: document.getElementById('daytime_aircon_price'),
         nighttime_aircon_price: document.getElementById('nighttime_aircon_price'),
+        additional_per_head: document.getElementById('additional_per_head'),
+        minimum_capacity: document.getElementById('minimum_capacity'),
+        maximum_capacity: document.getElementById('maximum_capacity'),
         description: document.getElementById('description'),
         image: document.getElementById('image'),
         status: document.getElementById('status'),
@@ -41,6 +48,61 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const openModal = () => {
         modal.classList.add('is-open');
+    };
+
+    const normalizeValue = (value) => {
+        if (value === null || value === undefined || value === '') {
+            return Number.POSITIVE_INFINITY;
+        }
+        const parsed = parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
+    };
+
+    const filterAndSortRows = () => {
+        const query = amenitySearch.value.trim().toLowerCase();
+        const sortColumn = amenitySortColumn.value;
+        const sortOrder = amenitySortOrder.value;
+        const tbody = document.querySelector('.amenities-table tbody');
+
+        const activeStatus = amenityStatus.value;
+        let filteredRows = amenityRows.filter(row => {
+            const name = row.dataset.amenitiesName.toLowerCase();
+            const matchesName = name.includes(query);
+            if (!matchesName) {
+                return false;
+            }
+            if (activeStatus === 'all') {
+                return true;
+            }
+            return row.dataset.status === activeStatus;
+        });
+
+        const compareRow = (a, b, field, direction = 'asc') => {
+            const aValue = normalizeValue(a.dataset[field]);
+            const bValue = normalizeValue(b.dataset[field]);
+            if (aValue === bValue) return 0;
+            return direction === 'asc' ? aValue - bValue : bValue - aValue;
+        };
+
+        if (sortColumn) {
+            if (sortOrder === 'none') {
+                filteredRows = filteredRows.filter(row => {
+                    const value = row.dataset[sortColumn];
+                    return value === '' || value === null || value === undefined;
+                });
+            } else {
+                filteredRows.sort((a, b) => compareRow(a, b, sortColumn, sortOrder));
+            }
+        }
+
+        tbody.innerHTML = '';
+        if (filteredRows.length > 0) {
+            filteredRows.forEach(row => tbody.appendChild(row));
+        } else {
+            const emptyRow = document.createElement('tr');
+            emptyRow.innerHTML = '<td colspan="6" class="table-empty">No amenities found.</td>';
+            tbody.appendChild(emptyRow);
+        }
     };
 
     const closeModal = () => {
@@ -71,6 +133,9 @@ document.addEventListener('DOMContentLoaded', function () {
             nighttime_price: row.dataset.nighttimePrice || row.querySelector('td:nth-child(3)').textContent.trim(),
             daytime_aircon_price: row.dataset.daytimeAirconPrice || '',
             nighttime_aircon_price: row.dataset.nighttimeAirconPrice || '',
+            additional_per_head: row.dataset.additionalPerHead || '',
+            minimum_capacity: row.dataset.minimumCapacity || '',
+            maximum_capacity: row.dataset.maximumCapacity || '',
             description: row.dataset.description || '',
             imageUrl: row.dataset.imageUrl || '',
             imagePath: row.dataset.imagePath || '',
@@ -95,6 +160,9 @@ document.addEventListener('DOMContentLoaded', function () {
         fields.nighttime_price.value = data.nighttime_price;
         fields.daytime_aircon_price.value = data.daytime_aircon_price;
         fields.nighttime_aircon_price.value = data.nighttime_aircon_price;
+        fields.additional_per_head.value = data.additional_per_head;
+        fields.minimum_capacity.value = data.minimum_capacity;
+        fields.maximum_capacity.value = data.maximum_capacity;
         fields.description.value = data.description;
         fields.status.value = data.status;
         
@@ -132,6 +200,11 @@ document.addEventListener('DOMContentLoaded', function () {
         button.addEventListener('click', closeModal);
     });
 
+    amenitySearch.addEventListener('input', filterAndSortRows);
+    amenitySortColumn.addEventListener('change', filterAndSortRows);
+    amenitySortOrder.addEventListener('change', filterAndSortRows);
+    amenityStatus.addEventListener('change', filterAndSortRows);
+
     modal.addEventListener('click', (event) => {
         if (event.target === modal) {
             closeModal();
@@ -145,6 +218,9 @@ document.addEventListener('DOMContentLoaded', function () {
             openModal();
         });
     });
+
+    // Initial filter/sort display
+    filterAndSortRows();
 
     const updateFilePreview = (file) => {
         imageFileName.textContent = file ? file.name : 'No file chosen';
@@ -197,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Handle numeric-only price inputs
-    ['daytime_price', 'nighttime_price', 'daytime_aircon_price', 'nighttime_aircon_price'].forEach(id => {
+    ['daytime_price', 'nighttime_price', 'daytime_aircon_price', 'nighttime_aircon_price', 'additional_per_head', 'minimum_capacity', 'maximum_capacity'].forEach(id => {
         const input = document.getElementById(id);
         input.addEventListener('input', () => {
             input.value = input.value.replace(/[^\d\.]/g, '');

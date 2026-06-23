@@ -63,8 +63,45 @@
     border-radius: 2rem;
     border: 1px solid #e2e8f0;
     overflow: hidden;
-    max-height: 600px;
+    max-height: 360px;
     overflow-y: auto;
+}
+
+.amenities-table-toolbar {
+    display: grid;
+    grid-template-columns: 1fr repeat(3, minmax(180px, 220px));
+    gap: 1rem;
+    align-items: end;
+    padding: 1.5rem 1.5rem 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.amenities-table-toolbar__item {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.amenities-table-toolbar__item label {
+    color: #334155;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.amenities-table-toolbar__item input,
+.amenities-table-toolbar__item select {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.875rem;
+    padding: 0.85rem 1rem;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 0.95rem;
+}
+
+.amenities-table-toolbar__item input::placeholder {
+    color: #94a3b8;
 }
 
 .amenities-table {

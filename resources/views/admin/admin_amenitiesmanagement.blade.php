@@ -44,14 +44,49 @@
                 @endif
 
                 <section class="amenities-table-wrap">
+                    <div class="amenities-table-toolbar">
+                        <div class="amenities-table-toolbar__item">
+                            <label for="amenitySearch">Search amenities</label>
+                            <input id="amenitySearch" type="search" placeholder="Search by name..." autocomplete="off">
+                        </div>
+                        <div class="amenities-table-toolbar__item">
+                            <label for="amenitySortColumn">Sort column</label>
+                            <select id="amenitySortColumn">
+                                <option value="">None</option>
+                                <option value="daytimePrice">Day price</option>
+                                <option value="nighttimePrice">Night price</option>
+                                <option value="daytimeAirconPrice">Daytime aircon price</option>
+                                <option value="nighttimeAirconPrice">Nighttime aircon price</option>
+                                <option value="additionalPerHead">Additional per head</option>
+                                <option value="minimumCapacity">Minimum capacity</option>
+                                <option value="maximumCapacity">Maximum capacity</option>
+                            </select>
+                        </div>
+                        <div class="amenities-table-toolbar__item">
+                            <label for="amenitySortOrder">Sort order</label>
+                            <select id="amenitySortOrder">
+                                <option value="none">None</option>
+                                <option value="asc">Low to high</option>
+                                <option value="desc">High to low</option>
+                            </select>
+                        </div>
+                        <div class="amenities-table-toolbar__item">
+                            <label for="amenityStatus">Status</label>
+                            <select id="amenityStatus">
+                                <option value="all">All statuses</option>
+                                <option value="enabled">Enabled only</option>
+                                <option value="disabled">Disabled only</option>
+                            </select>
+                        </div>
+                    </div>
                     <table class="amenities-table">
                         <thead>
                             <tr>
                                 <th>Name</th>
                                 <th>Day price</th>
                                 <th>Night price</th>
-                                <th>Description</th>
-                                <th>Image</th>
+                                <th>Min cap</th>
+                                <th>Max cap</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -65,6 +100,9 @@
                                     data-nighttime-price="{{ $amenity->nighttime_price }}"
                                     data-daytime-aircon-price="{{ $amenity->daytime_aircon_price }}"
                                     data-nighttime-aircon-price="{{ $amenity->nighttime_aircon_price }}"
+                                    data-additional-per-head="{{ $amenity->additional_per_head }}"
+                                    data-minimum-capacity="{{ $amenity->minimum_capacity }}"
+                                    data-maximum-capacity="{{ $amenity->maximum_capacity }}"
                                     data-description="{{ e($amenity->description) }}"
                                     data-image-url="{{ $amenity->image ? e(asset('storage/' . $amenity->image)) : '' }}"
                                     data-image-path="{{ $amenity->image ?? '' }}"
@@ -73,8 +111,8 @@
                                     <td>{{ $amenity->amenities_name }}</td>
                                     <td>{{ $amenity->daytime_price }}</td>
                                     <td>{{ $amenity->nighttime_price }}</td>
-                                    <td class="td-truncate" title="{{ $amenity->description ?? '' }}">{{ $amenity->description ?? '—' }}</td>
-                                    <td class="td-truncate" title="{{ $amenity->image ?? '' }}">{{ $amenity->image ? basename($amenity->image) : '—' }}</td>
+                                    <td>{{ $amenity->minimum_capacity !== null && $amenity->minimum_capacity !== '' ? $amenity->minimum_capacity : 'none' }}</td>
+                                    <td>{{ $amenity->maximum_capacity !== null && $amenity->maximum_capacity !== '' ? $amenity->maximum_capacity : 'none' }}</td>
                                     <td>
                                         <span class="badge {{ $amenity->status ? 'badge--enabled' : 'badge--disabled' }}">
                                             {{ $amenity->status ? 'Enabled' : 'Disabled' }}
@@ -135,6 +173,21 @@
                 <div class="modal-form__row">
                     <label for="nighttime_aircon_price">Nighttime Aircon Price</label>
                     <input id="nighttime_aircon_price" name="nighttime_aircon_price" type="number" step="0.01" min="0" inputmode="decimal">
+                </div>
+
+                <div class="modal-form__row">
+                    <label for="additional_per_head">Additional Per Head</label>
+                    <input id="additional_per_head" name="additional_per_head" type="number" step="0.01" min="0" inputmode="decimal">
+                </div>
+
+                <div class="modal-form__row">
+                    <label for="minimum_capacity">Minimum Capacity</label>
+                    <input id="minimum_capacity" name="minimum_capacity" type="number" step="1" min="0" inputmode="numeric">
+                </div>
+
+                <div class="modal-form__row">
+                    <label for="maximum_capacity">Maximum Capacity</label>
+                    <input id="maximum_capacity" name="maximum_capacity" type="number" step="1" min="0" inputmode="numeric">
                 </div>
 
                 <div class="modal-form__row modal-form__row--full">
