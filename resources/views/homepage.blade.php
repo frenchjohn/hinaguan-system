@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Hinaguan Nature Park — Discover pristine trails, rich biodiversity, and unforgettable outdoor experiences.">
 
     <title>Hinaguan Nature Park</title>
 
-    <link rel="preconnect" href="https://fonts.bunny.net">
+        <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700|playfair-display:600,700" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/css/homepage.css', 'resources/js/homepage.js'])
@@ -37,18 +37,6 @@
 
                 <a href="{{ route('reservation') }}" class="hp-btn hp-btn--book">Book Now</a>
 
-                @if (Route::has('login'))
-                    <div class="hp-nav__auth">
-                        @auth
-                            <a href="{{ url('/dashboard') }}" class="hp-btn hp-btn--primary">Dashboard</a>
-                        @else
-                            <a href="{{ route('login') }}" class="hp-btn hp-btn--ghost">Log in</a>
-                            @if (Route::has('register'))
-                                <a href="{{ route('register') }}" class="hp-btn hp-btn--primary">Register</a>
-                            @endif
-                        @endauth
-                    </div>
-                @endif
             </nav>
 
             <button class="hp-menu-toggle" aria-label="Open menu" aria-expanded="false">
@@ -66,16 +54,6 @@
         <a href="#features">Explore</a>
         <a href="#contact">Contact</a>
         <a href="{{ route('reservation') }}">Book Now</a>
-        @if (Route::has('login'))
-            @auth
-                <a href="{{ url('/dashboard') }}">Dashboard</a>
-            @else
-                <a href="{{ route('login') }}">Log in</a>
-                @if (Route::has('register'))
-                    <a href="{{ route('register') }}">Register</a>
-                @endif
-            @endauth
-        @endif
     </nav>
 
     {{-- Hero --}}
@@ -95,7 +73,7 @@
                             width="48"
                             height="48"
                         >
-                    @endif
+                        @endif
                     <div class="hp-weather__info">
                         <p class="hp-weather__temp">{{ round($weather['temp_c']) }}°C</p>
                         <p class="hp-weather__condition">{{ $weather['condition'] }}</p>
@@ -106,7 +84,7 @@
                     Feels like {{ round($weather['feelslike_c']) }}°C · {{ $weather['humidity'] }}% humidity
                 </p>
             </aside>
-        @endif
+            @endif
 
         <div class="hp-hero__content">
             <span class="hp-hero__badge">Welcome to Paradise</span>
@@ -211,7 +189,7 @@
                     <div class="hp-feature__icon">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
-                        </svg>
+                                    </svg>
                     </div>
                     <h3 class="hp-feature__title">Wildlife Watching</h3>
                     <p class="hp-feature__desc">
@@ -225,7 +203,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
+                                    </svg>
                     </div>
                     <h3 class="hp-feature__title">Picnic &amp; Camping</h3>
                     <p class="hp-feature__desc">
@@ -281,7 +259,7 @@
                         <div class="hp-contact-item__icon">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                            </svg>
+                    </svg>
                         </div>
                         <div>
                             <p class="hp-contact-item__label">Phone</p>
@@ -293,7 +271,7 @@
                         <div class="hp-contact-item__icon">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                            </svg>
+                    </svg>
                         </div>
                         <div>
                             <p class="hp-contact-item__label">Email</p>
@@ -305,7 +283,7 @@
                         <div class="hp-contact-item__icon">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
+                    </svg>
                         </div>
                         <div>
                             <p class="hp-contact-item__label">Park Hours</p>
@@ -326,5 +304,5 @@
         <p>&copy; {{ date('Y') }} <strong>Hinaguan Nature Park</strong>. All rights reserved.</p>
     </footer>
 
-</body>
+    </body>
 </html>
