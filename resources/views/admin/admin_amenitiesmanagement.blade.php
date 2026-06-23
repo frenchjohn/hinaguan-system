@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Amenities Management — Hinaguan Nature Park</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700|playfair-display:600,700" rel="stylesheet">
+    @vite([
+        'resources/css/app.css',
+        'resources/components/css_js/header.css',
+        'resources/components/css_js/sidemenu.css',
+        'resources/css/admin_css/admin_amenitiesmanagement.css',
+        'resources/components/css_js/header.js',
+        'resources/components/css_js/sidemenu.js',
+        'resources/js/admin_js/admin_amenitiesmanagement.js',
+    ])
+</head>
+<body class="antialiased">
+    <div class="dash-layout">
+        <x-admin-sidemenu active="amenities" />
+
+        <div class="dash-main">
+            <x-header
+                title="Amenities Management"
+                subtitle="Create, edit, and maintain park amenities"
+                userName="Admin User"
+                userRole="Administrator"
+                :settingsUrl="route('admin.settings')"
+            />
+
+            <main class="dash-content">
+                <section class="amenities-head">
+                    <div>
+                        <p class="amenities-head__eyebrow">Manage Amenities</p>
+                        <h2 class="amenities-head__title">All amenities</h2>
+                        <p class="amenities-head__text">View amenity details, enable or disable availability, and add new park services.</p>
+                    </div>
+                    <button type="button" class="btn btn--primary" data-open-amenity-modal>New Amenity</button>
+                </section>
+
+                @if(session('success'))
+                    <div class="alert alert--success">{{ session('success') }}</div>
+                @endif
+
+                <section class="amenities-table-wrap">
+                    <table class="amenities-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Day price</th>
+                                <th>Night price</th>
+                                <th>Description</th>
+                                <th>Image</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($amenities as $amenity)
+                                <tr
+                                    class="amenity-row"
+                                    data-amenity-id="{{ $amenity->id }}"
+                                    data-amenities-name="{{ e($amenity->amenities_name) }}"
+                                    data-daytime-price="{{ $amenity->daytime_price }}"
+                                    data-nighttime-price="{{ $amenity->nighttime_price }}"
+                                    data-daytime-aircon-price="{{ $amenity->daytime_aircon_price }}"
+                                    data-nighttime-aircon-price="{{ $amenity->nighttime_aircon_price }}"
+                                    data-description="{{ e($amenity->description) }}"
+                                    data-image-url="{{ $amenity->image ? e(asset('storage/' . $amenity->image)) : '' }}"
+                                    data-image-path="{{ $amenity->image ?? '' }}"
+                                    data-status="{{ $amenity->status ? 'enabled' : 'disabled' }}"
+                                >
+                                    <td>{{ $amenity->amenities_name }}</td>
+                                    <td>{{ $amenity->daytime_price }}</td>
+                                    <td>{{ $amenity->nighttime_price }}</td>
+                                    <td class="td-truncate" title="{{ $amenity->description ?? '' }}">{{ $amenity->description ?? '—' }}</td>
+                                    <td class="td-truncate" title="{{ $amenity->image ?? '' }}">{{ $amenity->image ? basename($amenity->image) : '—' }}</td>
+                                    <td>
+                                        <span class="badge {{ $amenity->status ? 'badge--enabled' : 'badge--disabled' }}">
+                                            {{ $amenity->status ? 'Enabled' : 'Disabled' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="table-empty">No amenities found yet.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal" id="amenityModal" aria-hidden="true">
+        <div class="modal__backdrop" data-close-amenity-modal></div>
+        <div class="modal__panel">
+            <div class="modal__header">
+                <h3 id="amenityModalTitle">Add New Amenity</h3>
+                <button type="button" class="modal__close" data-close-amenity-modal>&times;</button>
+            </div>
+
+            <form method="POST" action="{{ route('admin.amenities.store') }}" class="modal-form" id="amenityForm" enctype="multipart/form-data" data-store-url="{{ route('admin.amenities.store') }}" data-update-base-url="{{ url('admin/amenities') }}">
+                @csrf
+                <input type="hidden" name="amenity_id" id="amenityId">
+                <input type="hidden" name="existing_image" id="existingImage">
+
+                <div class="modal-form__row modal-form__row--full">
+                    <div id="imagePreview" class="image-preview" style="display:none;">
+                        <img id="imagePreviewImg" src="" alt="Amenity preview">
+                    </div>
+                </div>
+
+                <div class="modal-form__row">
+                    <label for="amenities_name">Name <span>*</span></label>
+                    <input id="amenities_name" name="amenities_name" type="text" required>
+                </div>
+
+                <div class="modal-form__row">
+                    <label for="daytime_price">Daytime Price <span>*</span></label>
+                    <input id="daytime_price" name="daytime_price" type="number" step="0.01" min="0" inputmode="decimal" required>
+                </div>
+
+                <div class="modal-form__row">
+                    <label for="nighttime_price">Nighttime Price <span>*</span></label>
+                    <input id="nighttime_price" name="nighttime_price" type="number" step="0.01" min="0" inputmode="decimal" required>
+                </div>
+
+                <div class="modal-form__row">
+                    <label for="daytime_aircon_price">Daytime Aircon Price</label>
+                    <input id="daytime_aircon_price" name="daytime_aircon_price" type="number" step="0.01" min="0" inputmode="decimal">
+                </div>
+
+                <div class="modal-form__row">
+                    <label for="nighttime_aircon_price">Nighttime Aircon Price</label>
+                    <input id="nighttime_aircon_price" name="nighttime_aircon_price" type="number" step="0.01" min="0" inputmode="decimal">
+                </div>
+
+                <div class="modal-form__row modal-form__row--full">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="3"></textarea>
+                </div>
+
+                <div class="modal-form__row modal-form__row--full">
+                    <label>Amenity Image</label>
+                    <div class="dropzone" id="imageDropZone">
+                        <span class="dropzone__text">Drag & drop an image here, or click to browse</span>
+                        <span class="dropzone__filename" id="imageFileName">No file chosen</span>
+                    </div>
+                    <input id="image" name="image" type="file" accept="image/*" hidden>
+                </div>
+
+                <div class="modal-form__row">
+                    <label for="status">Status</label>
+                    <select id="status" name="status">
+                        <option value="enabled">Enabled</option>
+                        <option value="disabled">Disabled</option>
+                    </select>
+                </div>
+
+                <div class="modal-form__actions">
+                    <button type="button" class="btn btn--ghost" data-close-amenity-modal>Cancel</button>
+                    <button type="button" class="btn btn--ghost" id="amenityEditButton" style="display:none;">Edit</button>
+                    <button type="submit" class="btn btn--primary" id="amenitySubmitButton">Create Amenity</button>
+                    <button type="button" class="btn btn--danger" id="amenityDeleteButton" style="display:none;" data-delete-amenity>Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

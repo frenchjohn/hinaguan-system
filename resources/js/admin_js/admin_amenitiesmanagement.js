@@ -1,0 +1,222 @@
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('amenityModal');
+    const openButtons = document.querySelectorAll('[data-open-amenity-modal]');
+    const closeButtons = document.querySelectorAll('[data-close-amenity-modal]');
+    const amenityRows = document.querySelectorAll('.amenity-row');
+    const form = document.getElementById('amenityForm');
+    const modalTitle = document.getElementById('amenityModalTitle');
+    const submitButton = document.getElementById('amenitySubmitButton');
+    const deleteButton = document.getElementById('amenityDeleteButton');
+    const amenityIdInput = document.getElementById('amenityId');
+
+    const fields = {
+        amenities_name: document.getElementById('amenities_name'),
+        daytime_price: document.getElementById('daytime_price'),
+        nighttime_price: document.getElementById('nighttime_price'),
+        daytime_aircon_price: document.getElementById('daytime_aircon_price'),
+        nighttime_aircon_price: document.getElementById('nighttime_aircon_price'),
+        description: document.getElementById('description'),
+        image: document.getElementById('image'),
+        status: document.getElementById('status'),
+    };
+
+    const dropZone = document.getElementById('imageDropZone');
+    const imageInput = document.getElementById('image');
+    const imageFileName = document.getElementById('imageFileName');
+
+    const editButton = document.getElementById('amenityEditButton');
+    const imagePreview = document.getElementById('imagePreview');
+    const imagePreviewImg = document.getElementById('imagePreviewImg');
+
+    const setFormReadOnly = (readOnly) => {
+        Object.values(fields).forEach(field => {
+            field.disabled = readOnly;
+        });
+        if (readOnly) {
+            dropZone.classList.add('dropzone--disabled');
+        } else {
+            dropZone.classList.remove('dropzone--disabled');
+        }
+    };
+
+    const openModal = () => {
+        modal.classList.add('is-open');
+    };
+
+    const closeModal = () => {
+        modal.classList.remove('is-open');
+        form.reset();
+        amenityIdInput.value = '';
+        document.getElementById('existingImage').value = '';
+        modalTitle.textContent = 'Add New Amenity';
+        submitButton.textContent = 'Create Amenity';
+        submitButton.style.display = 'inline-flex';
+        editButton.style.display = 'none';
+        deleteButton.style.display = 'none';
+        setFormReadOnly(false);
+        form.action = form.dataset.storeUrl;
+        form.method = 'POST';
+        const methodInput = form.querySelector('input[name="_method"]');
+        if (methodInput) methodInput.remove();
+        imageFileName.textContent = 'No file chosen';
+        dropZone.classList.remove('is-active');
+        imagePreview.style.display = 'none';
+    };
+
+    const populateFormForEdit = (row) => {
+        const amenityId = row.dataset.amenityId;
+        const data = {
+            amenities_name: row.dataset.amenitiesName,
+            daytime_price: row.dataset.daytimePrice || row.querySelector('td:nth-child(2)').textContent.trim(),
+            nighttime_price: row.dataset.nighttimePrice || row.querySelector('td:nth-child(3)').textContent.trim(),
+            daytime_aircon_price: row.dataset.daytimeAirconPrice || '',
+            nighttime_aircon_price: row.dataset.nighttimeAirconPrice || '',
+            description: row.dataset.description || '',
+            imageUrl: row.dataset.imageUrl || '',
+            imagePath: row.dataset.imagePath || '',
+            status: row.dataset.status || 'enabled',
+        };
+
+        const baseUrl = form.dataset.updateBaseUrl;
+        form.action = `${baseUrl}/${amenityId}`;
+        form.method = 'POST';
+        let methodInput = form.querySelector('input[name="_method"]');
+        if (!methodInput) {
+            methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            form.appendChild(methodInput);
+        }
+        methodInput.value = 'PUT';
+
+        amenityIdInput.value = amenityId;
+        fields.amenities_name.value = data.amenities_name;
+        fields.daytime_price.value = data.daytime_price;
+        fields.nighttime_price.value = data.nighttime_price;
+        fields.daytime_aircon_price.value = data.daytime_aircon_price;
+        fields.nighttime_aircon_price.value = data.nighttime_aircon_price;
+        fields.description.value = data.description;
+        fields.status.value = data.status;
+        
+        document.getElementById('existingImage').value = data.imagePath || '';
+        imageFileName.textContent = data.imageUrl ? data.imageUrl.split('/').pop() : 'No file chosen';
+
+        if (data.imageUrl) {
+            imagePreviewImg.src = data.imageUrl;
+            imagePreview.style.display = 'block';
+        } else {
+            imagePreview.style.display = 'none';
+        }
+
+        modalTitle.textContent = 'Amenity details';
+        submitButton.textContent = 'Update Amenity';
+        submitButton.style.display = 'none';
+        editButton.style.display = 'inline-flex';
+        deleteButton.style.display = 'inline-flex';
+        setFormReadOnly(true);
+        deleteButton.dataset.deleteAmenity = amenityId;
+    };
+
+    openButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            editButton.style.display = 'none';
+            submitButton.style.display = 'inline-flex';
+            deleteButton.style.display = 'none';
+            setFormReadOnly(false);
+            imagePreview.style.display = 'none';
+            openModal();
+        });
+    });
+
+    closeButtons.forEach(button => {
+        button.addEventListener('click', closeModal);
+    });
+
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    // Add row click listeners
+    amenityRows.forEach(row => {
+        row.addEventListener('click', () => {
+            populateFormForEdit(row);
+            openModal();
+        });
+    });
+
+    const updateFilePreview = (file) => {
+        imageFileName.textContent = file ? file.name : 'No file chosen';
+    };
+
+    dropZone.addEventListener('click', () => {
+        if (!imageInput.disabled) {
+            imageInput.click();
+        }
+    });
+
+    editButton.addEventListener('click', () => {
+        setFormReadOnly(false);
+        submitButton.style.display = 'inline-flex';
+        editButton.style.display = 'none';
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dropZone.classList.add('is-active');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dropZone.classList.remove('is-active');
+        });
+    });
+
+    dropZone.addEventListener('drop', (event) => {
+        if (imageInput.disabled) {
+            return;
+        }
+        const files = event.dataTransfer.files;
+        if (files.length) {
+            imageInput.files = files;
+            updateFilePreview(files[0]);
+            imagePreview.style.display = 'none';
+        }
+    });
+
+    imageInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        updateFilePreview(file);
+        imagePreview.style.display = 'none';
+    });
+
+    // Handle numeric-only price inputs
+    ['daytime_price', 'nighttime_price', 'daytime_aircon_price', 'nighttime_aircon_price'].forEach(id => {
+        const input = document.getElementById(id);
+        input.addEventListener('input', () => {
+            input.value = input.value.replace(/[^\d\.]/g, '');
+        });
+    });
+
+    // Handle delete button
+    deleteButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        const amenityId = deleteButton.dataset.deleteAmenity;
+        if (!amenityId) return;
+
+        if (confirm('Are you sure you want to delete this amenity?')) {
+            const deleteForm = document.createElement('form');
+            deleteForm.method = 'POST';
+            deleteForm.action = `${form.dataset.updateBaseUrl}/${amenityId}`;
+            deleteForm.innerHTML = '<input type="hidden" name="_token" value="' + document.querySelector('[name="_token"]').value + '"><input type="hidden" name="_method" value="DELETE">';
+            document.body.appendChild(deleteForm);
+            deleteForm.submit();
+        }
+    });
+});
