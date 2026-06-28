@@ -37,6 +37,11 @@ class LoginController extends Controller
         } else {
             $account = StaffAccount::where('email', $credentials['email'])->first();
             if ($account && Hash::check($credentials['password'], $account->password)) {
+                if ($account->ban_status) {
+                    return back()
+                        ->withInput($request->only('email'))
+                        ->with('error', 'This staff account has been banned.');
+                }
                 $role = 'staff';
             }
         }

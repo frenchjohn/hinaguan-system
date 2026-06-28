@@ -15,9 +15,14 @@ class StaffAccount extends Model
         'name',
         'email',
         'password',
+        'ban_status',
     ];
 
     protected $hidden = [
         'password',
+    ];
+
+    protected $casts = [
+        'ban_status' => 'boolean',
     ];
 }
