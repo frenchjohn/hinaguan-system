@@ -1,0 +1,57 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('reservations', function (Blueprint $table) {
+            $table->string('id')->primary();
+
+            // Booker Information
+            $table->string('booker_name');
+            $table->string('phone');
+            $table->string('email');
+
+            // Reservation Details
+            $table->date('check_in');
+            $table->date('check_out');
+            $table->unsignedInteger('number_of_guests');
+
+            // Reservation Status
+            $table->enum('status', [
+                'Pending',
+                'Confirmed',
+                'Checked In',
+                'Checked Out',
+                'Cancelled'
+            ])->default('Pending');
+
+            // Payment Summary
+            $table->decimal('total_amount', 10, 2);
+            $table->decimal('amount_paid', 10, 2)->default(0);
+            $table->decimal('remaining_balance', 10, 2);
+
+            $table->enum('payment_status', [
+                'Partially Paid',
+                'Paid'
+            ])->default('Partially Paid');
+
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('reservations');
+    }
+};

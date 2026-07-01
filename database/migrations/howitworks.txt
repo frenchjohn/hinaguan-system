@@ -1,0 +1,27 @@
+First when Reservation Customer arrived on reserved data,
+they will record the customers of that reservation, cause
+on the data only the guy who reserved is on the data,
+They will record it on "Customer Table" now to make them
+know that this customer belongs to this "Reservation", 
+The Junction Table will arrived here and its "Reservation_Guests table"
+this will store the Reservation Id and Customer Id in Foreign key.
+Reservation ID = Customer ID
+C001 = C001
+C001 = C002
+C001 = C003
+
+Now the "reservation_Amenities" this where supports multiple amenity
+and it will store the Reservation ID and amenities ID
+C001 = C001
+C001 = C002
+C001 = C003
+
+And about the "price_at_booking" its the fixed price, like its the total price
+and not foreign key so if the price changed, the total price is
+stay as what they agreed.
+
+and About the "Pricing_type" wether its daytime, nighttime and etc
+it will filled automatically like the customer pick if its day or night 
+or with aircon or not if available cause these are columns of "Amenities Table"
+so each of it is connected to each price, before sending the total price and
+the percantage of the downpayment that must be purchased

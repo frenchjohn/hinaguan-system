@@ -18,7 +18,13 @@ Route::get('/amenities', function () {
 })->name('amenities');
 
 Route::get('/reservation', function () {
-    return view('reservationpage');
+    $amenities = Amenity::where('status', true)
+        ->orderBy('amenities_name')
+        ->get();
+
+    return view('reservationpage', [
+        'amenities' => $amenities,
+    ]);
 })->name('reservation');
 
 Route::get('/park-portal', [LoginController::class, 'show'])->name('login');
