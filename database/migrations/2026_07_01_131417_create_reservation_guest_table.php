@@ -11,22 +11,12 @@ return new class extends Migration
         Schema::create('reservation_guests', function (Blueprint $table) {
             $table->id();
 
-            $table->string('reservation_id');
-            $table->string('customer_id');
+            $table->foreignId('reservation_id')->constrained('reservations')->cascadeOnDelete();
+            $table->foreignId('customer_id')->constrained('customers')->cascadeOnDelete();
 
             $table->boolean('is_primary_guest')->default(false);
 
             $table->timestamps();
-
-            $table->foreign('reservation_id')
-                ->references('id')
-                ->on('reservations')
-                ->cascadeOnDelete();
-
-            $table->foreign('customer_id')
-                ->references('id')
-                ->on('customers')
-                ->cascadeOnDelete();
 
             // Prevent duplicate customer-reservation pairs
             $table->unique(['reservation_id', 'customer_id']);

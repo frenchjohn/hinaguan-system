@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Book a Visit — Hinaguan Nature Park</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600|playfair-display:600,700" rel="stylesheet">
@@ -24,6 +25,14 @@
                         <span id="reservationDay" class="rp-date-card__day">{{ now()->format('l') }}</span>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <section class="rp-slotbar" aria-label="Booking type">
+            <span class="rp-slotbar__label">Booking type</span>
+            <div class="rp-slotbar__buttons">
+                <button type="button" class="rp-slot-btn is-active" data-slot="Daytime">Daytime</button>
+                <button type="button" class="rp-slot-btn" data-slot="Nighttime">Nighttime</button>
             </div>
         </section>
 
@@ -58,7 +67,20 @@
                             $minPrice = collect([$amenity->daytime_price, $amenity->nighttime_price])->filter()->min();
                             $maxPrice = collect([$amenity->daytime_price, $amenity->nighttime_price])->filter()->max();
                         @endphp
-                        <article class="rp-card" data-name="{{ $amenity->amenities_name }}" data-min-capacity="{{ $amenity->minimum_capacity }}" data-max-capacity="{{ $amenity->maximum_capacity }}" data-min-price="{{ $minPrice }}" data-max-price="{{ $maxPrice }}" data-daytime-price="{{ $amenity->daytime_price }}" data-nighttime-price="{{ $amenity->nighttime_price }}" data-additional="{{ $amenity->additional_per_head ?? '0' }}" data-description="{{ $amenity->description ?? '' }}">
+                        <article class="rp-card"
+                            data-amenity-id="{{ $amenity->id }}"
+                            data-name="{{ $amenity->amenities_name }}"
+                            data-min-capacity="{{ $amenity->minimum_capacity }}"
+                            data-max-capacity="{{ $amenity->maximum_capacity }}"
+                            data-min-price="{{ $minPrice }}"
+                            data-max-price="{{ $maxPrice }}"
+                            data-daytime-price="{{ $amenity->daytime_price }}"
+                            data-nighttime-price="{{ $amenity->nighttime_price }}"
+                            data-daytime-aircon-price="{{ $amenity->daytime_aircon_price ?? '' }}"
+                            data-nighttime-aircon-price="{{ $amenity->nighttime_aircon_price ?? '' }}"
+                            data-has-aircon="{{ (!empty($amenity->daytime_aircon_price) || !empty($amenity->nighttime_aircon_price)) ? '1' : '0' }}"
+                            data-additional="{{ $amenity->additional_per_head ?? '0' }}"
+                            data-description="{{ $amenity->description ?? '' }}">
                             <button type="button" class="rp-card__button" data-open-modal>
                                 @if($amenity->image)
                                     <div class="rp-card__image" style="background-image:url('{{ asset('storage/' . $amenity->image) }}')"></div>
@@ -71,6 +93,9 @@
                             </button>
                         </article>
                     @endforeach
+                </div>
+                <div class="rp-empty" id="emptyState" style="display:none;">
+                    <p>No amenities are available for the selected date and booking type.</p>
                 </div>
             @endif
         </section>
@@ -86,12 +111,45 @@
                     <button type="button" class="rp-modal__close" data-close-modal>&times;</button>
                 </div>
                 <div class="rp-modal__content">
-                    <div class="rp-modal__row"><span>Date:</span> <span id="modalDate"></span></div>
-                    <div class="rp-modal__row"><span>Capacity:</span> <span id="modalCapacity"></span></div>
-                    <div class="rp-modal__row"><span>Daytime price:</span> <span id="modalDaytime"></span></div>
-                    <div class="rp-modal__row"><span>Nighttime price:</span> <span id="modalNighttime"></span></div>
-                    <div class="rp-modal__row"><span>Additional:</span> <span id="modalAdditional"></span></div>
-                    <p class="rp-modal__text" id="modalDescription"></p>
+                    <div class="rp-modal__left">
+                        <div class="rp-modal__summary">
+                            <div class="rp-modal__meta">
+                                <div class="rp-modal__meta-item"><span>Date</span><strong id="modalDate"></strong></div>
+                                <div class="rp-modal__meta-item"><span>Type</span><strong id="modalSlot"></strong></div>
+                                <div class="rp-modal__meta-item"><span>Capacity</span><strong id="modalCapacity"></strong></div>
+                            </div>
+                            <div class="rp-modal__pricebox">
+                                <span id="modalPriceLabel">Price</span>
+                                <strong id="modalPriceValue">₱0.00</strong>
+                                <p id="modalPriceHint"></p>
+                            </div>
+                            <div id="airconChoice" class="rp-modal__aircon"></div>
+                            <p class="rp-modal__text" id="modalDescription"></p>
+                        </div>
+                    </div>
+                    <div class="rp-modal__right">
+                        <form class="rp-booking-form is-hidden" id="bookingForm">
+                            <h3>Guest reservation</h3>
+                            <label>
+                                Booker name
+                                <input type="text" name="booker_name" placeholder="Enter booker name" required>
+                            </label>
+                            <label>
+                                Phone
+                                <input type="tel" name="phone" placeholder="Enter phone number" required>
+                            </label>
+                            <label>
+                                Email
+                                <input type="email" name="email" placeholder="Enter email address" required>
+                            </label>
+                            <label>
+                                Number of guests
+                                <input type="number" name="number_of_guests" min="1" required>
+                            </label>
+                            <button type="submit" class="rp-booking-form__button">Reserve prototype</button>
+                            <p class="rp-booking-form__message" id="bookingNotice"></p>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

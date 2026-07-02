@@ -64,10 +64,6 @@
     box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
 }
 
-.rp-filterbar__intro {
-    max-width: 42rem;
-}
-
 .rp-filterbar__controls {
     display: flex;
     flex-wrap: wrap;
@@ -131,6 +127,47 @@
     text-transform: capitalize;
 }
 
+.rp-slotbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    background: #ffffff;
+    border-radius: 1.2rem;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+}
+
+.rp-slotbar__label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.rp-slotbar__buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.rp-slot-btn {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    padding: 0.7rem 1rem;
+    border-radius: 999px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.rp-slot-btn.is-active {
+    background: #1d4ed8;
+    color: #ffffff;
+    border-color: #1d4ed8;
+}
+
 .rp-subfilters {
     display: grid;
     grid-template-columns: repeat(3, minmax(180px, 1fr));
@@ -166,7 +203,7 @@
 
 .rp-grid__list {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
 }
 
@@ -263,11 +300,12 @@
 .rp-modal__panel {
     position: relative;
     width: 100%;
-    max-width: 28rem;
+    max-width: 54rem;
     background: #ffffff;
     border-radius: 1.5rem;
     box-shadow: 0 40px 80px rgba(15, 23, 42, 0.15);
     padding: 1.75rem;
+    margin: 1.5rem 0;
     z-index: 1;
 }
 
@@ -304,20 +342,143 @@
 
 .rp-modal__content {
     display: grid;
-    gap: 1rem;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 1.25rem;
 }
 
-.rp-modal__row {
+.rp-modal__left,
+.rp-modal__right {
     display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    font-size: 0.95rem;
-    color: #334155;
+    flex-direction: column;
 }
 
-.rp-modal__row span:last-child {
-    font-weight: 600;
+.rp-modal__summary {
+    display: grid;
+    gap: 1rem;
+}
+
+.rp-modal__meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.rp-modal__meta-item {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.8rem;
+    background: #f8fafc;
+    border-radius: 1rem;
+}
+
+.rp-modal__meta-item span {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.rp-modal__meta-item strong {
     color: #102a43;
+}
+
+.rp-modal__pricebox {
+    padding: 1rem;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+    border: 1px solid #dbeafe;
+}
+
+.rp-modal__pricebox span {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #1d4ed8;
+    font-weight: 700;
+}
+
+.rp-modal__pricebox strong {
+    display: block;
+    margin-top: 0.4rem;
+    font-size: 1.45rem;
+    color: #102a43;
+}
+
+.rp-modal__pricebox p {
+    margin: 0.3rem 0 0;
+    color: #475569;
+}
+
+.rp-modal__aircon {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.rp-choice-btn,
+.rp-booking-form__button {
+    border: none;
+    border-radius: 999px;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.rp-choice-btn {
+    background: #f8fafc;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+
+.rp-booking-form {
+    display: grid;
+    gap: 0.85rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 1.2rem;
+}
+
+.rp-booking-form.is-hidden {
+    display: none;
+}
+
+.rp-booking-form h3 {
+    margin: 0;
+    color: #102a43;
+}
+
+.rp-booking-form label {
+    display: grid;
+    gap: 0.35rem;
+    color: #334155;
+    font-size: 0.95rem;
+}
+
+.rp-booking-form input {
+    width: 100%;
+    min-height: 2.8rem;
+    border-radius: 0.9rem;
+    border: 1px solid #cbd5e1;
+    padding: 0.75rem 0.9rem;
+}
+
+.rp-booking-form__button {
+    background: #1d4ed8;
+    color: #ffffff;
+}
+
+.rp-booking-form__button.is-loading {
+    opacity: 0.9;
+    cursor: wait;
+}
+
+.rp-booking-form__message {
+    margin: 0;
+    min-height: 1.15rem;
+    color: #16a34a;
+    font-weight: 600;
 }
 
 .rp-modal__text {
@@ -326,9 +487,9 @@
     line-height: 1.8;
 }
 
-@media (max-width: 1180px) {
-    .rp-grid__list {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+@media (max-width: 980px) {
+    .rp-modal__content {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -338,7 +499,7 @@
     }
 
     .rp-grid__list {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -347,13 +508,15 @@
         padding: 2rem 1rem 3rem;
     }
 
-    .rp-grid__list {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .rp-subfilters {
+        grid-template-columns: 1fr;
     }
-}
 
-@media (max-width: 520px) {
     .rp-grid__list {
+        grid-template-columns: 1fr;
+    }
+
+    .rp-modal__meta {
         grid-template-columns: 1fr;
     }
 }

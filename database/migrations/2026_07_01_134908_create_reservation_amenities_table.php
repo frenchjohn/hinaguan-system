@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
 
             // Foreign Keys
-            $table->string('reservation_id');
+            $table->foreignId('reservation_id')->constrained('reservations')->cascadeOnDelete();
             $table->string('amenity_id');
 
             // Price selected during reservation
@@ -38,11 +38,6 @@ return new class extends Migration
             $table->timestamps();
 
             // Foreign Keys
-            $table->foreign('reservation_id')
-                ->references('id')
-                ->on('reservations')
-                ->cascadeOnDelete();
-
             $table->foreign('amenity_id')
                 ->references('id')
                 ->on('amenities')

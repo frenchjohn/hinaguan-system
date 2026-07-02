@@ -3,9 +3,15 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
 use App\Models\Amenity;
+use App\Models\Customer;
+use App\Models\Reservation;
+use App\Models\ReservationAmenity;
+use App\Models\ReservationGuest;
 use App\Models\StaffAccount;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Mail\ReservationQrMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -22,10 +28,107 @@ Route::get('/reservation', function () {
         ->orderBy('amenities_name')
         ->get();
 
+    if ($amenities->isEmpty()) {
+        $sampleAmenities = [
+            ['id' => 'amenity-1', 'amenities_name' => 'Cottage A', 'daytime_price' => 500, 'nighttime_price' => 700, 'daytime_aircon_price' => 800, 'nighttime_aircon_price' => 900, 'additional_per_head' => 100, 'minimum_capacity' => 10, 'maximum_capacity' => 20, 'description' => 'Cozy cottage with garden view.', 'image' => null, 'status' => true],
+            ['id' => 'amenity-2', 'amenities_name' => 'Cottage B', 'daytime_price' => 550, 'nighttime_price' => 750, 'daytime_aircon_price' => 850, 'nighttime_aircon_price' => 950, 'additional_per_head' => 100, 'minimum_capacity' => 12, 'maximum_capacity' => 22, 'description' => 'Spacious cottage for family gatherings.', 'image' => null, 'status' => true],
+            ['id' => 'amenity-3', 'amenities_name' => 'Picnic Area', 'daytime_price' => 300, 'nighttime_price' => 450, 'daytime_aircon_price' => null, 'nighttime_aircon_price' => null, 'additional_per_head' => 50, 'minimum_capacity' => 8, 'maximum_capacity' => 15, 'description' => 'Open picnic ground near the river.', 'image' => null, 'status' => true],
+            ['id' => 'amenity-4', 'amenities_name' => 'Camping Ground', 'daytime_price' => 350, 'nighttime_price' => 500, 'daytime_aircon_price' => null, 'nighttime_aircon_price' => null, 'additional_per_head' => 75, 'minimum_capacity' => 6, 'maximum_capacity' => 20, 'description' => 'Camping spot with a scenic view.', 'image' => null, 'status' => true],
+            ['id' => 'amenity-5', 'amenities_name' => 'Function Hall', 'daytime_price' => 1200, 'nighttime_price' => 1600, 'daytime_aircon_price' => 1500, 'nighttime_aircon_price' => 1900, 'additional_per_head' => 120, 'minimum_capacity' => 20, 'maximum_capacity' => 50, 'description' => 'Indoor hall for events and gatherings.', 'image' => null, 'status' => true],
+            ['id' => 'amenity-6', 'amenities_name' => 'Viewing Deck', 'daytime_price' => 400, 'nighttime_price' => 600, 'daytime_aircon_price' => null, 'nighttime_aircon_price' => null, 'additional_per_head' => 50, 'minimum_capacity' => 5, 'maximum_capacity' => 12, 'description' => 'A scenic viewing deck for small groups.', 'image' => null, 'status' => true],
+        ];
+
+        foreach ($sampleAmenities as $sampleAmenity) {
+            Amenity::firstOrCreate(['id' => $sampleAmenity['id']], $sampleAmenity);
+        }
+
+        $amenities = Amenity::where('status', true)
+            ->orderBy('amenities_name')
+            ->get();
+    }
+
     return view('reservationpage', [
         'amenities' => $amenities,
     ]);
 })->name('reservation');
+
+Route::post('/reservation/prototype', function (Request $request) {
+    $data = $request->validate([
+        'booker_name' => ['required', 'string', 'max:255'],
+        'phone' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'max:255'],
+        'number_of_guests' => ['required', 'integer', 'min:1'],
+        'amenity_id' => ['required', 'string'],
+        'pricing_type' => ['required', 'string'],
+        'price_at_booking' => ['required', 'numeric'],
+        'check_in' => ['nullable', 'date'],
+        'check_out' => ['nullable', 'date'],
+        'slot' => ['nullable', 'string'],
+    ]);
+
+    $reservation = Reservation::create([
+        'booker_name' => $data['booker_name'],
+        'phone' => $data['phone'],
+        'email' => $data['email'],
+        'check_in' => $data['check_in'] ?? now()->toDateString(),
+        'check_out' => $data['check_out'] ?? now()->addDay()->toDateString(),
+        'number_of_guests' => $data['number_of_guests'],
+        'status' => 'Pending',
+        'total_amount' => $data['price_at_booking'],
+        'amount_paid' => $data['price_at_booking'] * 0.5,
+        'remaining_balance' => $data['price_at_booking'] * 0.5,
+        'payment_status' => 'Partially Paid',
+    ]);
+
+    $customer = Customer::create([
+        'first_name' => $data['booker_name'],
+        'middle_name' => null,
+        'last_name' => '',
+        'gender' => 'Male',
+        'nationality' => 'Filipino',
+        'is_foreigner' => false,
+        'phone' => $data['phone'],
+        'email' => $data['email'],
+    ]);
+
+    ReservationGuest::create([
+        'reservation_id' => $reservation->id,
+        'customer_id' => $customer->id,
+        'is_primary_guest' => true,
+    ]);
+
+    ReservationAmenity::create([
+        'reservation_id' => $reservation->id,
+        'amenity_id' => $data['amenity_id'],
+        'pricing_type' => $data['pricing_type'],
+        'price_at_booking' => $data['price_at_booking'],
+        'quantity' => 1,
+        'remarks' => 'Prototype reservation from reservation page. Slot: ' . ($data['slot'] ?? 'Daytime'),
+    ]);
+
+    try {
+        Mail::to($data['email'])->send(new ReservationQrMail($reservation));
+    } catch (\Throwable $exception) {
+        report($exception);
+    }
+
+    return response()->json([
+        'success' => true,
+        'reservation_id' => $reservation->id,
+        'message' => 'Prototype reservation recorded and marked partially paid.',
+    ]);
+})->name('reservation.prototype')->withoutMiddleware([VerifyCsrfToken::class]);
+
+Route::get('/reservation/check-in/{reservation}', function (Reservation $reservation) {
+    $reservation->status = 'Checked In';
+    $reservation->save();
+
+    return response()->json([
+        'success' => true,
+        'reservation_id' => $reservation->id,
+        'message' => 'Reservation checked in successfully.',
+    ]);
+})->name('reservation.check-in');
 
 Route::get('/park-portal', [LoginController::class, 'show'])->name('login');
 Route::post('/park-portal', [LoginController::class, 'authenticate'])->name('login.submit');
