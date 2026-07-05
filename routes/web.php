@@ -58,13 +58,17 @@ Route::post('/reservation/prototype', function (Request $request) {
         'phone' => ['required', 'string', 'max:255'],
         'email' => ['required', 'email', 'max:255'],
         'number_of_guests' => ['required', 'integer', 'min:1'],
-        'amenity_id' => ['required', 'string'],
-        'pricing_type' => ['required', 'string'],
-        'price_at_booking' => ['required', 'numeric'],
         'check_in' => ['nullable', 'date'],
         'check_out' => ['nullable', 'date'],
         'slot' => ['nullable', 'string'],
+        'amenities' => ['required', 'array', 'min:1'],
+        'amenities.*.amenity_id' => ['required', 'string'],
+        'amenities.*.pricing_type' => ['required', 'string'],
+        'amenities.*.price_at_booking' => ['required', 'numeric'],
     ]);
+
+    // Calculate total from all amenities
+    $totalAmount = array_sum(array_column($data['amenities'], 'price_at_booking'));
 
     $reservation = Reservation::create([
         'booker_name' => $data['booker_name'],
@@ -74,9 +78,9 @@ Route::post('/reservation/prototype', function (Request $request) {
         'check_out' => $data['check_out'] ?? now()->addDay()->toDateString(),
         'number_of_guests' => $data['number_of_guests'],
         'status' => 'Pending',
-        'total_amount' => $data['price_at_booking'],
-        'amount_paid' => $data['price_at_booking'] * 0.5,
-        'remaining_balance' => $data['price_at_booking'] * 0.5,
+        'total_amount' => $totalAmount,
+        'amount_paid' => $totalAmount * 0.5,
+        'remaining_balance' => $totalAmount * 0.5,
         'payment_status' => 'Partially Paid',
     ]);
 
@@ -97,14 +101,17 @@ Route::post('/reservation/prototype', function (Request $request) {
         'is_primary_guest' => true,
     ]);
 
-    ReservationAmenity::create([
-        'reservation_id' => $reservation->id,
-        'amenity_id' => $data['amenity_id'],
-        'pricing_type' => $data['pricing_type'],
-        'price_at_booking' => $data['price_at_booking'],
-        'quantity' => 1,
-        'remarks' => 'Prototype reservation from reservation page. Slot: ' . ($data['slot'] ?? 'Daytime'),
-    ]);
+    // Create a ReservationAmenity record for each amenity
+    foreach ($data['amenities'] as $amenity) {
+        ReservationAmenity::create([
+            'reservation_id' => $reservation->id,
+            'amenity_id' => $amenity['amenity_id'],
+            'pricing_type' => $amenity['pricing_type'],
+            'price_at_booking' => $amenity['price_at_booking'],
+            'quantity' => 1,
+            'remarks' => 'Prototype reservation from reservation page. Slot: ' . ($data['slot'] ?? 'Daytime'),
+        ]);
+    }
 
     try {
         Mail::to($data['email'])->send(new ReservationQrMail($reservation));

@@ -7,6 +7,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const emptyState = document.getElementById('emptyState');
     const modal = document.getElementById('amenityModal');
     const modalClose = document.querySelectorAll('[data-close-modal]');
+    const multiSelectionToggle = document.getElementById('multiSelectionToggle');
+    const selectionFloatingBar = document.getElementById('selectionFloatingBar');
+    const selectionCountLabel = document.getElementById('selectionCountLabel');
+    const selectionCheckoutBtn = document.getElementById('selectionCheckoutBtn');
+    const selectionSheet = document.getElementById('selectionSheet');
+    const selectionSummaryList = document.getElementById('selectionSummaryList');
+    const selectionContinueBtn = document.getElementById('selectionContinueBtn');
+    const selectionCloseButtons = document.querySelectorAll('[data-close-selection]');
+    const selectionMathText = document.getElementById('selectionMathText');
+    const selectionTotalPrice = document.getElementById('selectionTotalPrice');
     const modalName = document.getElementById('modalName');
     const modalDate = document.getElementById('modalDate');
     const modalSlot = document.getElementById('modalSlot');
@@ -16,6 +26,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalPriceHint = document.getElementById('modalPriceHint');
     const modalDescription = document.getElementById('modalDescription');
     const airconChoice = document.getElementById('airconChoice');
+    const multiAirconModal = document.getElementById('multiAirconModal');
+    const multiAirconName = document.getElementById('multiAirconName');
+    const multiAirconDate = document.getElementById('multiAirconDate');
+    const multiAirconSlot = document.getElementById('multiAirconSlot');
+    const multiAirconCapacity = document.getElementById('multiAirconCapacity');
+    const multiAirconPriceValue = document.getElementById('multiAirconPriceValue');
+    const multiAirconPriceHint = document.getElementById('multiAirconPriceHint');
+    const multiAirconDescription = document.getElementById('multiAirconDescription');
+    const multiAirconChoice = document.getElementById('multiAirconChoice');
     const bookingForm = document.getElementById('bookingForm');
     const bookingNotice = document.getElementById('bookingNotice');
     const dateInput = document.getElementById('reservation_date');
@@ -28,6 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let selectedSlot = 'Daytime';
     let activeAmenity = null;
+    let pendingMultiAmenity = null;
+    let multiSelectionEnabled = false;
+    let selectedCards = [];
+    let multiSelectionChoices = {};
 
     const availabilityMap = {
         '2026-07-02': {
@@ -129,11 +152,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedPrice = choice === 'with' ? airconPrice : basePrice;
         const isAircon = choice === 'with';
 
-        modalPriceLabel.textContent = isAircon ? 'Aircon package' : 'Standard package';
-        modalPriceValue.textContent = `₱${selectedPrice.toFixed(2)}`;
-        modalPriceHint.textContent = isAircon
-            ? 'Air-conditioned pricing for this booking slot.'
-            : 'Standard pricing for this booking slot.';
+        if (multiSelectionEnabled && selectedCards.length > 0) {
+            const total = getSelectionTotal();
+            const calculation = selectedCards.map(c => {
+                const choiceForCard = multiSelectionChoices[c.dataset.amenityId] || 'without';
+                return getAmenityPrice(c, choiceForCard).toFixed(2);
+            }).join(' + ');
+            modalPriceLabel.textContent = 'Total from selection';
+            modalPriceValue.textContent = `₱${total.toFixed(2)}`;
+            modalPriceHint.textContent = `${calculation} = ₱${total.toFixed(2)}`;
+            
+            // Build the descriptions list for all selected amenities
+            const descriptionsHtml = selectedCards.map(c => {
+                const desc = c.dataset.description || 'No additional details available.';
+                return `<div class="rp-amenity-desc-item"><strong>${c.dataset.name}</strong><p>${desc}</p></div>`;
+            }).join('');
+            modalDescription.innerHTML = descriptionsHtml;
+        } else {
+            modalPriceLabel.textContent = isAircon ? 'Aircon package' : 'Standard package';
+            modalPriceValue.textContent = `₱${selectedPrice.toFixed(2)}`;
+            modalPriceHint.textContent = isAircon
+                ? 'Air-conditioned pricing for this booking slot.'
+                : 'Standard pricing for this booking slot.';
+            modalDescription.textContent = card.dataset.description || 'No additional details available.';
+        }
 
         bookingForm.classList.remove('is-hidden');
         const checkInInput = document.getElementById('bookingCheckIn');
@@ -144,24 +186,212 @@ document.addEventListener('DOMContentLoaded', () => {
         if (guestInput) guestInput.value = card.dataset.minCapacity || '1';
     };
 
+    const getSelectionTotal = () => {
+        return selectedCards.reduce((total, card) => {
+            const choice = multiSelectionChoices[card.dataset.amenityId] || 'without';
+            return total + getAmenityPrice(card, choice);
+        }, 0);
+    };
+
+    const updateSelectionUi = () => {
+        const count = selectedCards.length;
+        const total = getSelectionTotal();
+        if (selectionFloatingBar) {
+            selectionFloatingBar.hidden = !multiSelectionEnabled || count === 0;
+        }
+        if (selectionCountLabel) {
+            selectionCountLabel.textContent = count === 1 ? '1 amenity selected' : `${count} amenities selected`;
+        }
+        if (selectionCheckoutBtn) {
+            selectionCheckoutBtn.textContent = count === 1 ? 'Review selection' : 'Review selections';
+        }
+        const summaryHint = selectionFloatingBar?.querySelector('.rp-floating-actions__copy span');
+        if (summaryHint) {
+            summaryHint.textContent = count === 0 ? 'Tap to review your picks' : `₱${total.toFixed(2)} total`;
+        }
+
+        cards.forEach(card => {
+            const isSelected = selectedCards.includes(card);
+            card.classList.toggle('is-selected', multiSelectionEnabled && isSelected);
+            const overlay = card.querySelector('.rp-card__overlay');
+            if (overlay) {
+                overlay.classList.toggle('is-selected', multiSelectionEnabled && isSelected);
+            }
+        });
+    };
+
+    const renderMultiAirconSelection = (card, choice) => {
+        const basePrice = selectedSlot === 'Nighttime'
+            ? Number(card.dataset.nighttimePrice)
+            : Number(card.dataset.daytimePrice);
+        const airconPrice = selectedSlot === 'Nighttime'
+            ? Number(card.dataset.nighttimeAirconPrice)
+            : Number(card.dataset.daytimeAirconPrice);
+        const selectedPrice = choice === 'with' ? airconPrice : basePrice;
+        const isAircon = choice === 'with';
+
+        if (multiAirconName) multiAirconName.textContent = card.dataset.name || 'Amenity name';
+        if (multiAirconDate) multiAirconDate.textContent = dateInput.value;
+        if (multiAirconSlot) multiAirconSlot.textContent = selectedSlot;
+        if (multiAirconCapacity) multiAirconCapacity.textContent = `${card.dataset.minCapacity}–${card.dataset.maxCapacity} guests`;
+        if (multiAirconPriceValue) multiAirconPriceValue.textContent = `₱${selectedPrice.toFixed(2)}`;
+        if (multiAirconPriceHint) multiAirconPriceHint.textContent = isAircon
+            ? 'With air-conditioning included in this package.'
+            : 'Standard package without air-conditioning.';
+        if (multiAirconDescription) multiAirconDescription.textContent = card.dataset.description || 'No additional details available.';
+
+        if (multiAirconChoice) {
+            const baseDisplay = `₱${basePrice.toFixed(2)}`;
+            const airconDisplay = airconPrice ? `₱${airconPrice.toFixed(2)}` : 'N/A';
+            multiAirconChoice.innerHTML = `
+                <button type="button" class="rp-choice-btn ${choice === 'with' ? 'is-selected' : ''}" data-aircon-choice="with" data-price="${airconPrice}">
+                    <span>With Aircon</span>
+                    <span class="rp-choice-btn__price">${airconDisplay}</span>
+                </button>
+                <button type="button" class="rp-choice-btn ${choice === 'without' ? 'is-selected' : ''}" data-aircon-choice="without" data-price="${basePrice}">
+                    <span>Without Aircon</span>
+                    <span class="rp-choice-btn__price">${baseDisplay}</span>
+                </button>
+            `;
+        }
+    };
+
+    const openMultiAirconModal = (card) => {
+        pendingMultiAmenity = card;
+        const currentChoice = multiSelectionChoices[card.dataset.amenityId] || 'without';
+        renderMultiAirconSelection(card, currentChoice);
+        if (multiAirconModal) {
+            multiAirconModal.classList.add('is-open');
+            multiAirconModal.setAttribute('aria-hidden', 'false');
+        }
+        if (selectionFloatingBar) {
+            selectionFloatingBar.hidden = true;
+        }
+    };
+
+    const closeMultiAirconModal = () => {
+        if (multiAirconModal) {
+            multiAirconModal.classList.remove('is-open');
+            multiAirconModal.setAttribute('aria-hidden', 'true');
+        }
+        if (selectionFloatingBar && multiSelectionEnabled) {
+            const count = selectedCards.length;
+            selectionFloatingBar.hidden = count === 0;
+        }
+    };
+
+    const toggleCardSelection = (card) => {
+        if (!card) return;
+        const exists = selectedCards.includes(card);
+        const hasAircon = card.dataset.hasAircon === '1';
+
+        if (exists) {
+            selectedCards = selectedCards.filter(item => item !== card);
+            delete multiSelectionChoices[card.dataset.amenityId];
+            updateSelectionUi();
+            updateSelectionSummary();
+            return;
+        }
+
+        if (multiSelectionEnabled && hasAircon) {
+            openMultiAirconModal(card);
+            return;
+        }
+
+        selectedCards.push(card);
+        multiSelectionChoices[card.dataset.amenityId] = 'without';
+        updateSelectionUi();
+        updateSelectionSummary();
+    };
+
+    const getAmenityPrice = (card, choice) => {
+        const basePrice = selectedSlot === 'Nighttime'
+            ? Number(card.dataset.nighttimePrice)
+            : Number(card.dataset.daytimePrice);
+        const airconPrice = selectedSlot === 'Nighttime'
+            ? Number(card.dataset.nighttimeAirconPrice)
+            : Number(card.dataset.daytimeAirconPrice);
+
+        return choice === 'with' ? airconPrice : basePrice;
+    };
+
+    const updateSelectionSummary = () => {
+        if (!selectionSummaryList || !selectionMathText || !selectionTotalPrice) return;
+
+        if (selectedCards.length === 0) {
+            selectionMathText.textContent = 'No items selected';
+            selectionTotalPrice.textContent = '₱0.00';
+            selectionSummaryList.innerHTML = '<li class="rp-selection-sheet__empty">Select an amenity to review it here.</li>';
+            return;
+        }
+
+        let total = 0;
+        const parts = [];
+        selectionSummaryList.innerHTML = '';
+
+        selectedCards.forEach(card => {
+            const choice = multiSelectionChoices[card.dataset.amenityId] || 'without';
+            const price = getAmenityPrice(card, choice);
+            total += price;
+            const choiceLabel = choice === 'with' ? 'with aircon' : 'without aircon';
+            const line = document.createElement('li');
+            line.className = 'rp-selection-sheet__item';
+            line.innerHTML = `
+                <div class="rp-selection-sheet__item-main">
+                    <strong>${card.dataset.name || 'Selected amenity'}</strong>
+                    <span>${choiceLabel}</span>
+                </div>
+                <div class="rp-selection-sheet__item-price">₱${price.toFixed(2)}</div>
+            `;
+            selectionSummaryList.appendChild(line);
+            parts.push(`₱${price.toFixed(2)}`);
+        });
+
+        selectionMathText.textContent = parts.join(' + ');
+        selectionTotalPrice.textContent = `₱${total.toFixed(2)}`;
+    };
+
+    const openSelectionSheet = () => {
+        updateSelectionSummary();
+        if (selectionSheet) {
+            selectionSheet.classList.add('is-open');
+            selectionSheet.setAttribute('aria-hidden', 'false');
+        }
+    };
+
+    const closeSelectionSheet = () => {
+        if (selectionSheet) {
+            selectionSheet.classList.remove('is-open');
+            selectionSheet.setAttribute('aria-hidden', 'true');
+        }
+    };
+
     const openModal = (card) => {
         activeAmenity = card;
         bookingNotice.textContent = '';
-        modalName.textContent = card.dataset.name;
+        const currentChoice = multiSelectionChoices[card.dataset.amenityId] || 'without';
+        
+        if (multiSelectionEnabled && selectedCards.length > 0) {
+            const allNames = selectedCards.map(c => c.dataset.name).join(' + ');
+            modalName.textContent = allNames;
+        } else {
+            modalName.textContent = card.dataset.name;
+        }
+        
         modalDate.textContent = dateInput.value;
         modalSlot.textContent = selectedSlot;
         modalCapacity.textContent = `${card.dataset.minCapacity}–${card.dataset.maxCapacity} guests`;
-        modalDescription.textContent = card.dataset.description || 'No additional details available.';
 
         const hasAircon = card.dataset.hasAircon === '1';
         if (hasAircon) {
             airconChoice.innerHTML = `
-                <button type="button" class="rp-choice-btn" data-aircon-choice="with">With Aircon</button>
-                <button type="button" class="rp-choice-btn" data-aircon-choice="without">Without Aircon</button>
+                <button type="button" class="rp-choice-btn ${currentChoice === 'with' ? 'is-selected' : ''}" data-aircon-choice="with">With Aircon</button>
+                <button type="button" class="rp-choice-btn ${currentChoice === 'without' ? 'is-selected' : ''}" data-aircon-choice="without">Without Aircon</button>
             `;
             airconChoice.style.display = 'flex';
             bookingForm.classList.add('is-hidden');
             bookingForm.reset();
+            renderBookingSelection(card, currentChoice);
         } else {
             airconChoice.innerHTML = '';
             airconChoice.style.display = 'none';
@@ -170,11 +400,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
+        if (selectionFloatingBar) {
+            selectionFloatingBar.hidden = true;
+        }
     };
 
     const closeModal = () => {
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
+        if (selectionFloatingBar && multiSelectionEnabled) {
+            const count = selectedCards.length;
+            selectionFloatingBar.hidden = count === 0;
+        }
     };
 
     dateInput.addEventListener('change', () => {
@@ -201,19 +438,99 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    if (multiSelectionToggle) {
+        multiSelectionToggle.addEventListener('change', () => {
+            multiSelectionEnabled = multiSelectionToggle.checked;
+            if (!multiSelectionEnabled) {
+                selectedCards = [];
+            }
+            updateSelectionUi();
+        });
+    }
+
     document.querySelectorAll('[data-open-modal]').forEach(button => {
         button.addEventListener('click', () => {
-            openModal(button.closest('.rp-card'));
+            const card = button.closest('.rp-card');
+            if (multiSelectionEnabled) {
+                toggleCardSelection(card);
+                return;
+            }
+            openModal(card);
         });
     });
+
+    if (selectionCheckoutBtn) {
+        selectionCheckoutBtn.addEventListener('click', () => {
+            openSelectionSheet();
+        });
+    }
+
+    if (selectionContinueBtn) {
+        selectionContinueBtn.addEventListener('click', () => {
+            const firstCard = selectedCards[0];
+            closeSelectionSheet();
+            if (firstCard) {
+                openModal(firstCard);
+            }
+        });
+    }
 
     airconChoice.addEventListener('click', (event) => {
         const button = event.target.closest('[data-aircon-choice]');
         if (!button || !activeAmenity) {
             return;
         }
-        renderBookingSelection(activeAmenity, button.dataset.airconChoice);
+        const choice = button.dataset.airconChoice;
+        const amenityId = activeAmenity.dataset.amenityId;
+        if (amenityId) {
+            multiSelectionChoices[amenityId] = choice;
+        }
+        if (multiSelectionEnabled && !selectedCards.includes(activeAmenity)) {
+            selectedCards.push(activeAmenity);
+        }
+        renderBookingSelection(activeAmenity, choice);
+        updateSelectionUi();
+        updateSelectionSummary();
+        if (multiSelectionEnabled) {
+            closeModal();
+        }
+        airconChoice.querySelectorAll('[data-aircon-choice]').forEach(btn => {
+            btn.classList.toggle('is-selected', btn.dataset.airconChoice === choice);
+        });
     });
+
+    if (multiAirconChoice) {
+        multiAirconChoice.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-aircon-choice]');
+            if (!button || !pendingMultiAmenity) {
+                return;
+            }
+            const choice = button.dataset.airconChoice;
+            renderMultiAirconSelection(pendingMultiAmenity, choice);
+            multiAirconChoice.querySelectorAll('[data-aircon-choice]').forEach(btn => {
+                btn.classList.toggle('is-selected', btn.dataset.airconChoice === choice);
+            });
+        });
+    }
+
+    const multiAirconConfirmBtn = document.getElementById('multiAirconConfirmBtn');
+    if (multiAirconConfirmBtn) {
+        multiAirconConfirmBtn.addEventListener('click', () => {
+            if (!pendingMultiAmenity) return;
+            const selectedBtn = multiAirconChoice?.querySelector('[data-aircon-choice].is-selected');
+            const choice = selectedBtn ? selectedBtn.dataset.airconChoice : 'without';
+            const amenityId = pendingMultiAmenity.dataset.amenityId;
+            if (amenityId) {
+                multiSelectionChoices[amenityId] = choice;
+            }
+            if (!selectedCards.includes(pendingMultiAmenity)) {
+                selectedCards.push(pendingMultiAmenity);
+            }
+            updateSelectionUi();
+            updateSelectionSummary();
+            closeMultiAirconModal();
+        });
+    }
 
     const submitButton = bookingForm.querySelector('button[type="submit"]');
     let isSubmitting = false;
@@ -242,17 +559,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const formData = new FormData(bookingForm);
+        
+        // Build amenities array for multi-selection
+        let amenitiesArray = [];
+        if (multiSelectionEnabled && selectedCards.length > 0) {
+            amenitiesArray = selectedCards.map(card => {
+                const choice = multiSelectionChoices[card.dataset.amenityId] || 'without';
+                const price = getAmenityPrice(card, choice);
+                const pricingType = choice === 'with' ? `${selectedSlot} Aircon` : selectedSlot;
+                return {
+                    amenity_id: card.dataset.amenityId,
+                    pricing_type: pricingType,
+                    price_at_booking: price,
+                };
+            });
+        } else {
+            // Single selection mode
+            amenitiesArray = [{
+                amenity_id: activeAmenity.dataset.amenityId,
+                pricing_type: modalPriceLabel.textContent === 'Aircon package' ? `${selectedSlot} Aircon` : selectedSlot,
+                price_at_booking: Number(modalPriceValue.textContent.replace('₱', '').replace(',', '')),
+            }];
+        }
+
         const payload = {
             booker_name: formData.get('booker_name'),
             phone: formData.get('phone'),
             email: formData.get('email'),
             number_of_guests: Number(formData.get('number_of_guests')),
-            amenity_id: activeAmenity.dataset.amenityId,
-            pricing_type: modalPriceLabel.textContent === 'Aircon package' ? `${selectedSlot} Aircon` : selectedSlot,
-            price_at_booking: Number(modalPriceValue.textContent.replace('₱', '').replace(',', '')),
             check_in: dateInput.value,
             check_out: dateInput.value,
             slot: selectedSlot,
+            amenities: amenitiesArray,
         };
 
         setSubmittingState(true);
@@ -285,6 +623,32 @@ document.addEventListener('DOMContentLoaded', () => {
     modalClose.forEach(button => {
         button.addEventListener('click', closeModal);
     });
+
+    selectionCloseButtons.forEach(button => {
+        button.addEventListener('click', closeSelectionSheet);
+    });
+
+    if (multiAirconModal) {
+        document.querySelectorAll('[data-close-multi-aircon-modal]').forEach(button => {
+            button.addEventListener('click', closeMultiAirconModal);
+        });
+    }
+
+    if (multiAirconModal) {
+        multiAirconModal.addEventListener('click', (event) => {
+            if (event.target === multiAirconModal) {
+                closeMultiAirconModal();
+            }
+        });
+    }
+
+    if (selectionSheet) {
+        selectionSheet.addEventListener('click', (event) => {
+            if (event.target === selectionSheet) {
+                closeSelectionSheet();
+            }
+        });
+    }
 
     modal.addEventListener('click', (event) => {
         if (event.target === modal) {

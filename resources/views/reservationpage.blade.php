@@ -53,6 +53,10 @@
                 <label for="filterMax">Maximum</label>
                 <input id="filterMax" type="number" min="0" placeholder="Max" disabled>
             </div>
+            <label class="rp-multi-toggle" for="multiSelectionToggle">
+                <input id="multiSelectionToggle" type="checkbox">
+                <span>Multiple selection</span>
+            </label>
         </section>
 
         <section class="rp-grid">
@@ -99,6 +103,33 @@
                 </div>
             @endif
         </section>
+
+        <div class="rp-floating-actions" id="selectionFloatingBar" hidden>
+            <div class="rp-floating-actions__copy">
+                <strong id="selectionCountLabel">0 amenities selected</strong>
+                <span>Tap to review your picks</span>
+            </div>
+            <button type="button" id="selectionCheckoutBtn">Review selection</button>
+        </div>
+
+        <div class="rp-selection-sheet" id="selectionSheet" aria-hidden="true">
+            <div class="rp-selection-sheet__backdrop" data-close-selection></div>
+            <div class="rp-selection-sheet__panel">
+                <div class="rp-selection-sheet__header">
+                    <div>
+                        <p class="rp-modal__eyebrow">Selection summary</p>
+                        <h3>Your chosen amenities</h3>
+                    </div>
+                    <button type="button" class="rp-modal__close" data-close-selection>&times;</button>
+                </div>
+                <div class="rp-selection-sheet__total" id="selectionTotalBox">
+                    <div class="rp-selection-sheet__math" id="selectionMathText">No items selected</div>
+                    <div class="rp-selection-sheet__total-price" id="selectionTotalPrice">₱0.00</div>
+                </div>
+                <ul class="rp-selection-sheet__list" id="selectionSummaryList"></ul>
+                <button type="button" id="selectionContinueBtn" class="rp-booking-form__button">Continue booking</button>
+            </div>
+        </div>
 
         <div class="rp-modal" id="amenityModal" aria-hidden="true">
             <div class="rp-modal__backdrop" data-close-modal></div>
@@ -149,6 +180,36 @@
                             <button type="submit" class="rp-booking-form__button">Reserve prototype</button>
                             <p class="rp-booking-form__message" id="bookingNotice"></p>
                         </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rp-modal" id="multiAirconModal" aria-hidden="true">
+            <div class="rp-modal__backdrop" data-close-multi-aircon-modal></div>
+            <div class="rp-modal__panel rp-modal__panel--compact">
+                <div class="rp-modal__header">
+                    <div>
+                        <p class="rp-modal__eyebrow">Multiple reservation</p>
+                        <h2 id="multiAirconName">Amenity name</h2>
+                    </div>
+                    <button type="button" class="rp-modal__close" data-close-multi-aircon-modal>&times;</button>
+                </div>
+                <div class="rp-modal__content rp-modal__content--stacked">
+                    <div class="rp-modal__summary">
+                        <div class="rp-modal__meta">
+                            <div class="rp-modal__meta-item"><span>Date</span><strong id="multiAirconDate"></strong></div>
+                            <div class="rp-modal__meta-item"><span>Type</span><strong id="multiAirconSlot"></strong></div>
+                            <div class="rp-modal__meta-item"><span>Capacity</span><strong id="multiAirconCapacity"></strong></div>
+                        </div>
+                        <div class="rp-modal__pricebox">
+                            <span>Package price</span>
+                            <strong id="multiAirconPriceValue">₱0.00</strong>
+                            <p id="multiAirconPriceHint">Choose whether this amenity will include aircon.</p>
+                        </div>
+                        <div id="multiAirconChoice" class="rp-modal__aircon"></div>
+                        <p class="rp-modal__text" id="multiAirconDescription"></p>
+                        <button type="button" id="multiAirconConfirmBtn" class="rp-booking-form__button">Confirm selection</button>
                     </div>
                 </div>
             </div>
