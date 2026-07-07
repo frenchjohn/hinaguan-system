@@ -15,6 +15,7 @@ class ReservationGuest extends Model
         'reservation_id',
         'customer_id',
         'is_primary_guest',
+        'checked_out_at',
     ];
 
     public function reservation()

@@ -1,0 +1,4 @@
+/* Check Ins specific styles — reusing guest styles as base */
+@import 'staff_guests.css';
+
+/* Add any check-ins specific overrides below */

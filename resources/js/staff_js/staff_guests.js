@@ -22,6 +22,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const reservationTotal = document.getElementById('reservationTotal');
     const totalAmountInput = document.getElementById('totalAmountInput');
     const guestData = window.staffGuestData || {};
+    const primaryNationalityOption = document.getElementById('primaryGuestNationalityOption');
+    const primaryNationalityTextField = document.getElementById('primaryGuestNationalityTextField');
+    const primaryNationalityText = document.getElementById('primaryGuestNationalityText');
+    const companionNationalityOption = document.getElementById('companionNationalityOption');
+    const companionNationalityTextField = document.getElementById('companionNationalityTextField');
+    const companionNationalityText = document.getElementById('companionNationalityText');
+    const searchInput = document.getElementById('guestSearchInput');
+    const sortSelect = document.getElementById('guestSortSelect');
+    const checkInFrom = document.getElementById('guestCheckInFrom');
+    const checkInTo = document.getElementById('guestCheckInTo');
+    const checkOutFrom = document.getElementById('guestCheckOutFrom');
+    const checkOutTo = document.getElementById('guestCheckOutTo');
+    const clearButton = document.getElementById('guestFiltersClear');
+    const resultsCount = document.getElementById('guestResultsCount');
+    const filterToggle = document.getElementById('guestFilterToggle');
+    const filterPanel = document.getElementById('guestFilterPanel');
+    const summaryTotal = document.getElementById('guestSummaryTotal');
+    const summaryFemale = document.getElementById('guestSummaryFemale');
+    const summaryMale = document.getElementById('guestSummaryMale');
+    const summaryForeign = document.getElementById('guestSummaryForeign');
+    const summaryFilipino = document.getElementById('guestSummaryFilipino');
+    const tableBody = document.getElementById('guestTableBody');
+    const tableRows = Array.from(tableBody?.querySelectorAll('.guest-row') ?? []);
 
     const escapeHtml = (value) => String(value ?? '')
         .replaceAll('&', '&amp;')
@@ -29,6 +52,46 @@ document.addEventListener('DOMContentLoaded', () => {
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
+    
+    const formatDateTime = (dateString) => {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'N/A';
+            return date.toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true 
+            });
+        } catch {
+            return 'N/A';
+        }
+    };
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const normalizeStatus = (value) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, '_');
+    const isCheckedOutStatus = (value) => ['checked_out', 'checkedout', 'checked-out'].includes(normalizeStatus(value));
+    const toggleNationalityFields = () => {
+        const primaryForeign = primaryNationalityOption?.value === 'Foreign';
+        if (primaryNationalityTextField) {
+            primaryNationalityTextField.style.display = primaryForeign ? 'block' : 'none';
+        }
+        if (primaryNationalityText && !primaryForeign) {
+            primaryNationalityText.value = '';
+        }
+
+        const companionForeign = companionNationalityOption?.value === 'Foreign';
+        if (companionNationalityTextField) {
+            companionNationalityTextField.style.display = companionForeign ? 'block' : 'none';
+        }
+        if (companionNationalityText && !companionForeign) {
+            companionNationalityText.value = '';
+        }
+    };
 
     const roleLabelElement = document.getElementById('guestModalRole');
 
@@ -53,6 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const reservationDetails = reservations.map((entry) => {
             const reservation = entry.reservation || null;
             const reservationGuests = (reservation?.reservation_guests || []).filter((guest) => guest.customer);
+            const isCheckedOut = Boolean(entry?.checked_out_at) || isCheckedOutStatus(reservation?.status);
             const primaryGuest = reservationGuests.find((guest) => guest.is_primary_guest) ?? null;
             const companions = reservationGuests.filter((guest) => !guest.is_primary_guest);
             const primaryName = primaryGuest?.customer ? [primaryGuest.customer.first_name, primaryGuest.customer.last_name].filter(Boolean).join(' ').trim() : 'N/A';
@@ -97,8 +161,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="guest-value">${escapeHtml(reservation?.check_in ?? 'N/A')}</div>
                         </div>
                         <div>
-                            <span class="guest-label">Check-out</span>
-                            <div class="guest-value">${escapeHtml(reservation?.check_out ?? 'N/A')}</div>
+                            <span class="guest-label">Checked Out</span>
+                            <div class="guest-value">${escapeHtml(entry?.checked_out_at ? formatDateTime(entry.checked_out_at) : 'Not Yet')}</div>
                         </div>
                     </div>
                     <div class="guest-card__grid" style="margin-top:0.75rem;">
@@ -117,6 +181,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="margin-top:0.75rem;">
                         <span class="guest-label">Reserved Amenities</span>
                         <ul class="guest-list">${amenities || '<li>No amenities listed.</li>'}</ul>
+                    </div>
+                    <div class="guest-form__actions" style="margin-top:0.75rem;">
+                        <button type="button" class="guest-form__button guest-checkout-action" data-checkout-reservation-guest-id="${entry?.id ?? ''}" ${isCheckedOut ? 'disabled' : ''}>${isCheckedOut ? 'Checked Out' : 'Check Out'}</button>
                     </div>
                 </div>
             `;
@@ -154,6 +221,56 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.setAttribute('aria-hidden', 'false');
     };
 
+    modalBody.addEventListener('click', async (event) => {
+        const checkoutButton = event.target.closest('.guest-checkout-action');
+        if (!checkoutButton) {
+            return;
+        }
+
+        const reservationGuestId = checkoutButton.getAttribute('data-checkout-reservation-guest-id');
+        console.log('Checkout clicked:', { reservationGuestId, disabled: checkoutButton.disabled });
+        
+        if (!reservationGuestId || checkoutButton.disabled) {
+            console.warn('Checkout blocked:', { reservationGuestId, disabled: checkoutButton.disabled });
+            return;
+        }
+
+        checkoutButton.disabled = true;
+        checkoutButton.textContent = 'Checking out...';
+
+        try {
+            const url = `/staff/reservation-guests/${reservationGuestId}/check-out`;
+            console.log('Posting to:', url);
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({}),
+            });
+
+            console.log('Response status:', response.status);
+            
+            const payload = await response.json().catch(() => ({}));
+            console.log('Response payload:', payload);
+            
+            if (!response.ok) {
+                throw new Error(payload.message || 'Unable to update the reservation right now.');
+            }
+
+            window.location.reload();
+        } catch (error) {
+            console.error('Checkout error:', error);
+            checkoutButton.disabled = false;
+            checkoutButton.textContent = 'Check Out';
+            window.alert(error.message || 'Unable to update the reservation.');
+        }
+    });
+
     document.querySelectorAll('.guest-row').forEach((row) => {
         const openForRow = () => {
             const customerId = row.dataset.customerId;
@@ -175,7 +292,108 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    const updateGuestSummary = (rows) => {
+        if (!summaryTotal || !summaryFemale || !summaryMale || !summaryForeign || !summaryFilipino) {
+            return;
+        }
+
+        const femaleCount = rows.filter((row) => (row.getAttribute('data-gender') || '').toLowerCase() === 'female').length;
+        const maleCount = rows.filter((row) => (row.getAttribute('data-gender') || '').toLowerCase() === 'male').length;
+        const foreignCount = rows.filter((row) => row.getAttribute('data-is-foreign') === 'true').length;
+        const filipinoCount = rows.filter((row) => row.getAttribute('data-is-foreign') !== 'true').length;
+
+        summaryTotal.textContent = rows.length;
+        summaryFemale.textContent = femaleCount;
+        summaryMale.textContent = maleCount;
+        summaryForeign.textContent = foreignCount;
+        summaryFilipino.textContent = filipinoCount;
+    };
+
+    const applyGuestFilters = () => {
+        if (!tableBody) {
+            return;
+        }
+
+        const query = searchInput?.value.trim().toLowerCase() ?? '';
+        const checkInFromValue = checkInFrom?.value ?? '';
+        const checkInToValue = checkInTo?.value ?? '';
+        const checkOutFromValue = checkOutFrom?.value ?? '';
+        const checkOutToValue = checkOutTo?.value ?? '';
+        const sortValue = sortSelect?.value ?? 'name-asc';
+
+        const filteredRows = tableRows.filter((row) => {
+            const searchText = (row.getAttribute('data-search') || '').toLowerCase();
+            const matchesSearch = !query || searchText.includes(query);
+            const checkIn = row.getAttribute('data-check-in') || '';
+            const checkOut = row.getAttribute('data-check-out') || '';
+            const checkedOutAt = row.getAttribute('data-checked-out-at') || '';
+            const matchesActiveStatus = !summaryTotal || (!checkedOutAt && !isCheckedOutStatus(row.getAttribute('data-status')));
+            const matchesCheckInFrom = !checkInFromValue || !checkIn || checkIn >= checkInFromValue;
+            const matchesCheckInTo = !checkInToValue || !checkIn || checkIn <= checkInToValue;
+            const matchesCheckOutFrom = !checkOutFromValue || !checkOut || checkOut >= checkOutFromValue;
+            const matchesCheckOutTo = !checkOutToValue || !checkOut || checkOut <= checkOutToValue;
+
+            return matchesSearch && matchesActiveStatus && matchesCheckInFrom && matchesCheckInTo && matchesCheckOutFrom && matchesCheckOutTo;
+        });
+
+        filteredRows.sort((left, right) => {
+            const leftAge = Number(left.getAttribute('data-age-value') || 999999);
+            const rightAge = Number(right.getAttribute('data-age-value') || 999999);
+            const leftName = (left.querySelector('.guest-name')?.textContent ?? '').trim().toLowerCase();
+            const rightName = (right.querySelector('.guest-name')?.textContent ?? '').trim().toLowerCase();
+            const leftReservationType = (left.getAttribute('data-reservation-type') || '').trim().toLowerCase();
+            const rightReservationType = (right.getAttribute('data-reservation-type') || '').trim().toLowerCase();
+
+            switch (sortValue) {
+                case 'name-desc':
+                    return rightName.localeCompare(leftName);
+                case 'age-asc':
+                    return leftAge - rightAge;
+                case 'age-desc':
+                    return rightAge - leftAge;
+                case 'reservation-asc':
+                    return leftReservationType.localeCompare(rightReservationType);
+                case 'name-asc':
+                default:
+                    return leftName.localeCompare(rightName);
+            }
+        });
+
+        const existingEmptyState = document.getElementById('guestEmptyStateRow');
+        if (existingEmptyState) {
+            existingEmptyState.remove();
+        }
+
+        tableRows.forEach((row) => {
+            row.classList.add('is-hidden');
+            row.style.display = 'none';
+        });
+
+        filteredRows.forEach((row) => {
+            row.classList.remove('is-hidden');
+            row.style.display = '';
+            tableBody.appendChild(row);
+        });
+
+        if (!filteredRows.length) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.id = 'guestEmptyStateRow';
+            emptyRow.innerHTML = '<td colspan="5" class="guest-empty">No guest records matched your filters.</td>';
+            tableBody.appendChild(emptyRow);
+        }
+
+        updateGuestSummary(filteredRows);
+
+        if (resultsCount) {
+            resultsCount.textContent = `Showing ${filteredRows.length} of ${tableRows.length} active guest${tableRows.length === 1 ? '' : 's'}`;
+        }
+    };
+
     const togglePrimaryGuestSection = () => {
+        if (!form || !primaryGuestSection) {
+            return;
+        }
+
         const guestMode = form.querySelector('input[name="guest_mode"]:checked')?.value;
         primaryGuestSection.style.display = guestMode === 'with_primary' ? 'block' : 'none';
     };
@@ -193,7 +411,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = [companion.first_name, companion.middle_name, companion.last_name].filter(Boolean).join(' ').trim() || 'Unnamed companion';
             const item = document.createElement('div');
             item.className = 'guest-companion-pill';
-            item.textContent = name;
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = name;
+            item.appendChild(nameSpan);
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'guest-companion-pill__delete';
+            deleteBtn.textContent = '×';
+            deleteBtn.setAttribute('aria-label', `Remove ${name}`);
+            deleteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                companions.splice(index, 1);
+                renderCompanions();
+            });
+            item.appendChild(deleteBtn);
+            
             companionList.appendChild(item);
 
             const hiddenFirstName = document.createElement('input');
@@ -231,6 +465,12 @@ document.addEventListener('DOMContentLoaded', () => {
             hiddenNationality.name = `companions[${index}][nationality]`;
             hiddenNationality.value = companion.nationality || '';
             companionHiddenFields.appendChild(hiddenNationality);
+
+            const hiddenNationalityOption = document.createElement('input');
+            hiddenNationalityOption.type = 'hidden';
+            hiddenNationalityOption.name = `companions[${index}][nationality_option]`;
+            hiddenNationalityOption.value = companion.nationality_option || 'Filipino';
+            companionHiddenFields.appendChild(hiddenNationalityOption);
 
             const hiddenPhone = document.createElement('input');
             hiddenPhone.type = 'hidden';
@@ -351,6 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addModal.classList.remove('is-open');
         addModal.setAttribute('aria-hidden', 'true');
         form.reset();
+        toggleNationalityFields();
         companions.length = 0;
         renderCompanions();
         resetAmenityHiddenInputs();
@@ -369,48 +610,60 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', closeAddGuestModal);
     });
 
-    addModal.addEventListener('click', (event) => {
-        if (event.target === addModal || event.target.classList.contains('guest-modal__backdrop')) {
-            closeAddGuestModal();
-        }
-    });
+    if (addModal) {
+        addModal.addEventListener('click', (event) => {
+            if (event.target === addModal || event.target.classList.contains('guest-modal__backdrop')) {
+                closeAddGuestModal();
+            }
+        });
+    }
 
-    form.querySelectorAll('input[name="guest_mode"]').forEach((radio) => {
-        radio.addEventListener('change', togglePrimaryGuestSection);
-    });
+    if (form) {
+        form.querySelectorAll('input[name="guest_mode"]').forEach((radio) => {
+            radio.addEventListener('change', togglePrimaryGuestSection);
+        });
+        primaryNationalityOption?.addEventListener('change', toggleNationalityFields);
+    }
 
     addCompanionButton?.addEventListener('click', openCompanionModal);
+    companionNationalityOption?.addEventListener('change', toggleNationalityFields);
     chooseAmenitiesButton?.addEventListener('click', openAmenityModal);
 
     companionCloseButtons.forEach((button) => {
         button.addEventListener('click', closeCompanionModal);
     });
 
-    companionModal.addEventListener('click', (event) => {
-        if (event.target === companionModal || event.target.classList.contains('guest-modal__backdrop')) {
-            closeCompanionModal();
-        }
-    });
+    if (companionModal) {
+        companionModal.addEventListener('click', (event) => {
+            if (event.target === companionModal || event.target.classList.contains('guest-modal__backdrop')) {
+                closeCompanionModal();
+            }
+        });
+    }
 
     amenityCloseButtons.forEach((button) => {
         button.addEventListener('click', closeAmenityModal);
     });
 
-    amenityModal.addEventListener('click', (event) => {
-        if (event.target === amenityModal || event.target.classList.contains('guest-modal__backdrop')) {
-            closeAmenityModal();
-        }
-    });
-
-    amenitiesContainer.querySelectorAll('.guest-amenity-option').forEach((option) => {
-        const checkbox = option.querySelector('.amenity-checkbox');
-        const select = option.querySelector('.guest-amenity-option__select');
-        checkbox.addEventListener('change', () => {
-            select.disabled = !checkbox.checked;
-            updateAmenitySelection();
+    if (amenityModal) {
+        amenityModal.addEventListener('click', (event) => {
+            if (event.target === amenityModal || event.target.classList.contains('guest-modal__backdrop')) {
+                closeAmenityModal();
+            }
         });
-        select.addEventListener('change', updateAmenitySelection);
-    });
+    }
+
+    if (amenitiesContainer) {
+        amenitiesContainer.querySelectorAll('.guest-amenity-option').forEach((option) => {
+            const checkbox = option.querySelector('.amenity-checkbox');
+            const select = option.querySelector('.guest-amenity-option__select');
+            checkbox.addEventListener('change', () => {
+                select.disabled = !checkbox.checked;
+                updateAmenitySelection();
+            });
+            select.addEventListener('change', updateAmenitySelection);
+        });
+    }
 
     closeButtons.forEach((button) => {
         button.addEventListener('click', () => {
@@ -436,7 +689,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    [searchInput, sortSelect, checkInFrom, checkInTo, checkOutFrom, checkOutTo].forEach((element) => {
+        element?.addEventListener('input', applyGuestFilters);
+        element?.addEventListener('change', applyGuestFilters);
+    });
+
+    filterToggle?.addEventListener('click', () => {
+        if (!filterPanel) {
+            return;
+        }
+
+        const isExpanded = filterToggle.getAttribute('aria-expanded') === 'true';
+        filterPanel.hidden = isExpanded;
+        filterToggle.setAttribute('aria-expanded', String(!isExpanded));
+        filterToggle.querySelector('.guest-filter-toggle__icon').textContent = isExpanded ? '▾' : '▴';
+    });
+
+    clearButton?.addEventListener('click', () => {
+        if (searchInput) searchInput.value = '';
+        if (sortSelect) sortSelect.value = 'name-asc';
+        if (checkInFrom) checkInFrom.value = '';
+        if (checkInTo) checkInTo.value = '';
+        if (checkOutFrom) checkOutFrom.value = '';
+        if (checkOutTo) checkOutTo.value = '';
+        applyGuestFilters();
+    });
+
     togglePrimaryGuestSection();
+    toggleNationalityFields();
     updateAmenitySelection();
     renderCompanions();
+    applyGuestFilters();
 });

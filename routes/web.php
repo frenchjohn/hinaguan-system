@@ -59,7 +59,6 @@ Route::post('/reservation/prototype', function (Request $request) {
         'email' => ['required', 'email', 'max:255'],
         'number_of_guests' => ['required', 'integer', 'min:1'],
         'check_in' => ['nullable', 'date'],
-        'check_out' => ['nullable', 'date'],
         'slot' => ['nullable', 'string'],
         'amenities' => ['required', 'array', 'min:1'],
         'amenities.*.amenity_id' => ['required', 'string'],
@@ -75,7 +74,6 @@ Route::post('/reservation/prototype', function (Request $request) {
         'phone' => $data['phone'],
         'email' => $data['email'],
         'check_in' => $data['check_in'] ?? now()->toDateString(),
-        'check_out' => $data['check_out'] ?? now()->addDay()->toDateString(),
         'number_of_guests' => $data['number_of_guests'],
         'status' => 'Pending',
         'total_amount' => $totalAmount,
@@ -368,6 +366,76 @@ Route::prefix('staff')->name('staff.')->group(function () {
         return view('staff.staff_dashboard');
     })->name('dashboard');
 
+    Route::get('/check-ins', function (Request $request) {
+        $user = $request->session()->get('auth_user');
+        if (! $user || $user['role'] !== 'staff') {
+            return redirect()->route('login');
+        }
+
+        $customers = Customer::with(['reservationGuests' => function ($query) {
+            $query->with([
+                'reservation' => function ($reservationQuery) {
+                    $reservationQuery->with(['reservationAmenities' => function ($amenityQuery) {
+                        $amenityQuery->with('amenity');
+                    }, 'reservationGuests.customer']);
+                },
+                'customer',
+            ]);
+        }])
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+
+        $amenities = Amenity::where('status', true)
+            ->orderBy('amenities_name')
+            ->get();
+
+        $guestData = $customers->mapWithKeys(function ($customer) {
+            return [$customer->id => [
+                'id' => $customer->id,
+                'first_name' => $customer->first_name,
+                'middle_name' => $customer->middle_name,
+                'last_name' => $customer->last_name,
+                'age' => $customer->age,
+                'gender' => $customer->gender,
+                'nationality' => $customer->nationality,
+                'reservation_guests' => $customer->reservationGuests->map(function ($reservationGuest) {
+                    return [
+                        'id' => $reservationGuest->id,
+                        'checked_out_at' => $reservationGuest->checked_out_at,
+                        'is_primary_guest' => (bool) $reservationGuest->is_primary_guest,
+                        'reservation' => $reservationGuest->reservation ? [
+                            'id' => $reservationGuest->reservation->id,
+                            'reservation_type' => $reservationGuest->reservation->reservation_type,
+                            'status' => $reservationGuest->reservation->status,
+                            'check_in' => $reservationGuest->reservation->check_in,
+                            'booker_name' => $reservationGuest->reservation->booker_name,
+                            'reservation_amenities' => $reservationGuest->reservation->reservationAmenities->map(function ($reservationAmenity) {
+                                return [
+                                    'pricing_type' => $reservationAmenity->pricing_type,
+                                    'amenity' => [
+                                        'amenities_name' => $reservationAmenity->amenity?->amenities_name,
+                                    ],
+                                ];
+                            })->values(),
+                            'reservation_guests' => $reservationGuest->reservation->reservationGuests->map(function ($guestEntry) {
+                                return [
+                                    'is_primary_guest' => (bool) $guestEntry->is_primary_guest,
+                                    'customer' => [
+                                        'first_name' => $guestEntry->customer?->first_name,
+                                        'last_name' => $guestEntry->customer?->last_name,
+                                    ],
+                                ];
+                            })->values(),
+                        ] : null,
+                    ];
+                })->values(),
+            ]];
+        });
+
+        return view('staff.staff_check_ins', compact('customers', 'guestData', 'amenities'));
+    })->name('checkins');
+
     Route::get('/guests', function (Request $request) {
         $user = $request->session()->get('auth_user');
         if (! $user || $user['role'] !== 'staff') {
@@ -403,12 +471,14 @@ Route::prefix('staff')->name('staff.')->group(function () {
                 'nationality' => $customer->nationality,
                 'reservation_guests' => $customer->reservationGuests->map(function ($reservationGuest) {
                     return [
+                        'id' => $reservationGuest->id,
+                        'checked_out_at' => $reservationGuest->checked_out_at,
                         'is_primary_guest' => (bool) $reservationGuest->is_primary_guest,
                         'reservation' => $reservationGuest->reservation ? [
+                            'id' => $reservationGuest->reservation->id,
                             'reservation_type' => $reservationGuest->reservation->reservation_type,
                             'status' => $reservationGuest->reservation->status,
                             'check_in' => $reservationGuest->reservation->check_in,
-                            'check_out' => $reservationGuest->reservation->check_out,
                             'booker_name' => $reservationGuest->reservation->booker_name,
                             'reservation_amenities' => $reservationGuest->reservation->reservationAmenities->map(function ($reservationAmenity) {
                                 return [
@@ -421,10 +491,6 @@ Route::prefix('staff')->name('staff.')->group(function () {
                             'reservation_guests' => $reservationGuest->reservation->reservationGuests->map(function ($guestEntry) {
                                 return [
                                     'is_primary_guest' => (bool) $guestEntry->is_primary_guest,
-                                    'customer' => [
-                                        'first_name' => $guestEntry->customer?->first_name,
-                                        'last_name' => $guestEntry->customer?->last_name,
-                                    ],
                                 ];
                             })->values(),
                         ] : null,
@@ -446,13 +512,13 @@ Route::prefix('staff')->name('staff.')->group(function () {
             'guest_mode' => ['required', 'in:with_primary,visitors_only'],
             'reservation_type' => ['required', 'in:walk_in,online'],
             'check_in' => ['required', 'date'],
-            'check_out' => ['required', 'date'],
             'primary_guest' => ['nullable', 'array'],
             'primary_guest.first_name' => ['nullable', 'string', 'max:255'],
             'primary_guest.middle_name' => ['nullable', 'string', 'max:255'],
             'primary_guest.last_name' => ['nullable', 'string', 'max:255'],
             'primary_guest.age' => ['nullable', 'integer', 'min:0'],
             'primary_guest.gender' => ['nullable', 'in:Male,Female'],
+            'primary_guest.nationality_option' => ['nullable', 'in:Filipino,Foreign'],
             'primary_guest.nationality' => ['nullable', 'string', 'max:255'],
             'primary_guest.phone' => ['nullable', 'string', 'max:255'],
             'primary_guest.email' => ['nullable', 'email', 'max:255'],
@@ -462,6 +528,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
             'companions.*.last_name' => ['required_with:companions.*.first_name', 'string', 'max:255'],
             'companions.*.age' => ['nullable', 'integer', 'min:0'],
             'companions.*.gender' => ['nullable', 'in:Male,Female'],
+            'companions.*.nationality_option' => ['nullable', 'in:Filipino,Foreign'],
             'companions.*.nationality' => ['nullable', 'string', 'max:255'],
             'companions.*.phone' => ['nullable', 'string', 'max:255'],
             'companions.*.email' => ['nullable', 'email', 'max:255'],
@@ -470,7 +537,6 @@ Route::prefix('staff')->name('staff.')->group(function () {
             'selected_amenities.*.pricing_type' => ['required_with:selected_amenities.*.amenity_id', 'in:Daytime,Nighttime,Daytime Aircon,Nighttime Aircon'],
             'selected_amenities.*.price_at_booking' => ['required_with:selected_amenities.*.amenity_id', 'numeric'],
             'total_amount' => ['required', 'numeric', 'min:0'],
-            'is_checked_in' => ['nullable', 'boolean'],
         ]);
 
         $primaryGuestCount = ($data['guest_mode'] === 'with_primary' && ! empty($data['primary_guest'])) ? 1 : 0;
@@ -482,10 +548,9 @@ Route::prefix('staff')->name('staff.')->group(function () {
             'phone' => $data['primary_guest']['phone'] ?? '',
             'email' => $data['primary_guest']['email'] ?? '',
             'check_in' => $data['check_in'],
-            'check_out' => $data['check_out'],
             'number_of_guests' => $guestCount > 0 ? $guestCount : 1,
             'reservation_type' => $data['reservation_type'],
-            'status' => $data['is_checked_in'] ? 'Checked In' : 'Confirmed',
+            'status' => 'Checked In',
             'total_amount' => $data['total_amount'],
             'amount_paid' => $data['total_amount'],
             'remaining_balance' => 0,
@@ -500,6 +565,11 @@ Route::prefix('staff')->name('staff.')->group(function () {
             $primaryEmail = trim((string) ($primaryGuestData['email'] ?? '')) ?: null;
             $primaryPhone = trim((string) ($primaryGuestData['phone'] ?? '')) ?: null;
 
+            $primaryNationality = $primaryGuestData['nationality_option'] === 'Foreign'
+                ? trim((string) ($primaryGuestData['nationality'] ?? '')) ?: 'Foreign'
+                : 'Filipino';
+            $primaryIsForeigner = $primaryGuestData['nationality_option'] === 'Foreign';
+
             $primaryCustomer = Customer::firstOrCreate(
                 [
                     'first_name' => $primaryFirstName,
@@ -513,8 +583,8 @@ Route::prefix('staff')->name('staff.')->group(function () {
                     'last_name' => $primaryLastName,
                     'age' => $primaryGuestData['age'] ?? null,
                     'gender' => $primaryGuestData['gender'] ?? 'Male',
-                    'nationality' => $primaryGuestData['nationality'] ?? 'Filipino',
-                    'is_foreigner' => false,
+                    'nationality' => $primaryNationality,
+                    'is_foreigner' => $primaryIsForeigner,
                     'phone' => $primaryPhone,
                     'email' => $primaryEmail,
                 ]
@@ -535,6 +605,11 @@ Route::prefix('staff')->name('staff.')->group(function () {
             $companionEmail = trim((string) ($companionData['email'] ?? '')) ?: null;
             $companionPhone = trim((string) ($companionData['phone'] ?? '')) ?: null;
 
+            $companionNationality = $companionData['nationality_option'] === 'Foreign'
+                ? trim((string) ($companionData['nationality'] ?? '')) ?: 'Foreign'
+                : 'Filipino';
+            $companionIsForeigner = $companionData['nationality_option'] === 'Foreign';
+
             $companionCustomer = Customer::firstOrCreate(
                 [
                     'first_name' => $companionFirstName,
@@ -548,8 +623,8 @@ Route::prefix('staff')->name('staff.')->group(function () {
                     'last_name' => $companionLastName,
                     'age' => $companionData['age'] ?? null,
                     'gender' => $companionData['gender'] ?? 'Male',
-                    'nationality' => $companionData['nationality'] ?? 'Filipino',
-                    'is_foreigner' => false,
+                    'nationality' => $companionNationality,
+                    'is_foreigner' => $companionIsForeigner,
                     'phone' => $companionPhone,
                     'email' => $companionEmail,
                 ]
@@ -573,8 +648,24 @@ Route::prefix('staff')->name('staff.')->group(function () {
             ]);
         }
 
-        return redirect()->route('staff.guests')->with('success', 'Guest reservation created successfully.');
+        return redirect()->route('staff.checkins')->with('success', 'Guest reservation created successfully.');
     })->name('guests.store');
+
+    Route::post('/reservation-guests/{reservationGuest}/check-out', function (Request $request, ReservationGuest $reservationGuest) {
+        $user = $request->session()->get('auth_user');
+        if (! $user || $user['role'] !== 'staff') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $reservationGuest->update([
+            'checked_out_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'checked_out_at' => $reservationGuest->checked_out_at,
+        ]);
+    })->name('reservation-guests.checkout');
 
     Route::get('/settings', function (Request $request) {
         $user = $request->session()->get('auth_user');

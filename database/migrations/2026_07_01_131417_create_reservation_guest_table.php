@@ -15,6 +15,7 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained('customers')->cascadeOnDelete();
 
             $table->boolean('is_primary_guest')->default(false);
+            $table->dateTime('checked_out_at')->nullable();
 
             $table->timestamps();
 
