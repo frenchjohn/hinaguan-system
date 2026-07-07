@@ -23,6 +23,7 @@ return new class extends Migration
             $table->date('check_in');
             $table->date('check_out');
             $table->unsignedInteger('number_of_guests');
+            $table->enum('reservation_type', ['walk_in', 'online'])->default('online');
 
             // Reservation Status
             $table->enum('status', [

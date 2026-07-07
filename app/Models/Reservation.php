@@ -24,12 +24,18 @@ class Reservation extends Model
         'check_in',
         'check_out',
         'number_of_guests',
+        'reservation_type',
         'status',
         'total_amount',
         'amount_paid',
         'remaining_balance',
         'payment_status',
     ];
+
+    public function reservationAmenities()
+    {
+        return $this->hasMany(ReservationAmenity::class, 'reservation_id');
+    }
 
     protected $casts = [
         'total_amount' => 'decimal:2',

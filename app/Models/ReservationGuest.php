@@ -16,4 +16,14 @@ class ReservationGuest extends Model
         'customer_id',
         'is_primary_guest',
     ];
+
+    public function reservation()
+    {
+        return $this->belongsTo(Reservation::class, 'reservation_id');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
 }

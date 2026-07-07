@@ -4,6 +4,10 @@ namespace Database\Seeders;
 
 use App\Models\AdminAccount;
 use App\Models\Amenity;
+use App\Models\Customer;
+use App\Models\Reservation;
+use App\Models\ReservationAmenity;
+use App\Models\ReservationGuest;
 use App\Models\StaffAccount;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -19,19 +23,23 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        StaffAccount::create([
-            'name' => 'Staff User',
-            'email' => 'staff@example.com',
-            'password' => Hash::make('staff1234'),
-        ]);
+        StaffAccount::firstOrCreate(
+            ['email' => 'staff@example.com'],
+            [
+                'name' => 'Staff User',
+                'password' => Hash::make('staff1234'),
+            ]
+        );
 
-        AdminAccount::create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'password' => Hash::make('admin1234'),
-        ]);
+        AdminAccount::firstOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Admin User',
+                'password' => Hash::make('admin1234'),
+            ]
+        );
 
-        Amenity::create([
+        $mountainPicnicHut = Amenity::create([
             'id' => Str::uuid(),
             'amenities_name' => 'Mountain Picnic Hut',
             'daytime_price' => 2500,
@@ -46,7 +54,7 @@ class DatabaseSeeder extends Seeder
             'status' => true,
         ]);
 
-        Amenity::create([
+        $lakefrontPavilion = Amenity::create([
             'id' => Str::uuid(),
             'amenities_name' => 'Lakefront Pavilion',
             'daytime_price' => 4200,
@@ -76,7 +84,7 @@ class DatabaseSeeder extends Seeder
             'status' => false,
         ]);
 
-        Amenity::create([
+        $gardenBbqArea = Amenity::create([
             'id' => Str::uuid(),
             'amenities_name' => 'Garden BBQ Area',
             'daytime_price' => 3100,
@@ -106,7 +114,7 @@ class DatabaseSeeder extends Seeder
             'status' => false,
         ]);
 
-        Amenity::create([
+        $treehouseSuite = Amenity::create([
             'id' => Str::uuid(),
             'amenities_name' => 'Private Treehouse Suite',
             'daytime_price' => 9000,
@@ -119,6 +127,111 @@ class DatabaseSeeder extends Seeder
             'description' => 'Exclusive elevated suite with private access and comfort amenities.',
             'image' => null,
             'status' => true,
+        ]);
+
+        $primaryCustomer = Customer::create([
+            'first_name' => 'Maria',
+            'middle_name' => 'Clara',
+            'last_name' => 'Santos',
+            'age' => 29,
+            'gender' => 'Female',
+            'nationality' => 'Filipino',
+            'is_foreigner' => false,
+            'phone' => '09171234567',
+            'email' => 'maria@example.com',
+        ]);
+
+        $companionCustomer = Customer::create([
+            'first_name' => 'Rico',
+            'middle_name' => null,
+            'last_name' => 'Dela Cruz',
+            'age' => 31,
+            'gender' => 'Male',
+            'nationality' => 'Filipino',
+            'is_foreigner' => false,
+            'phone' => '09181234567',
+            'email' => 'rico@example.com',
+        ]);
+
+        $reservation = Reservation::create([
+            'booker_name' => 'Maria Santos',
+            'phone' => '09171234567',
+            'email' => 'maria@example.com',
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(2)->toDateString(),
+            'number_of_guests' => 2,
+            'reservation_type' => 'online',
+            'status' => 'Confirmed',
+            'total_amount' => 7800,
+            'amount_paid' => 7800,
+            'remaining_balance' => 0,
+            'payment_status' => 'Paid',
+        ]);
+
+        $walkInReservation = Reservation::create([
+            'booker_name' => 'Rico Dela Cruz',
+            'phone' => '09181234567',
+            'email' => 'rico@example.com',
+            'check_in' => now()->addDays(3)->toDateString(),
+            'check_out' => now()->addDays(4)->toDateString(),
+            'number_of_guests' => 2,
+            'reservation_type' => 'walk_in',
+            'status' => 'Pending',
+            'total_amount' => 3100,
+            'amount_paid' => 1000,
+            'remaining_balance' => 2100,
+            'payment_status' => 'Partially Paid',
+        ]);
+
+        ReservationGuest::create([
+            'reservation_id' => $reservation->id,
+            'customer_id' => $primaryCustomer->id,
+            'is_primary_guest' => true,
+        ]);
+
+        ReservationGuest::create([
+            'reservation_id' => $reservation->id,
+            'customer_id' => $companionCustomer->id,
+            'is_primary_guest' => false,
+        ]);
+
+        ReservationGuest::create([
+            'reservation_id' => $walkInReservation->id,
+            'customer_id' => $primaryCustomer->id,
+            'is_primary_guest' => true,
+        ]);
+
+        ReservationGuest::create([
+            'reservation_id' => $walkInReservation->id,
+            'customer_id' => $companionCustomer->id,
+            'is_primary_guest' => false,
+        ]);
+
+        ReservationAmenity::create([
+            'reservation_id' => $reservation->id,
+            'amenity_id' => $mountainPicnicHut->id,
+            'pricing_type' => 'Daytime',
+            'price_at_booking' => 2500,
+            'quantity' => 1,
+            'remarks' => 'Reserved by primary guest Maria Santos for the party',
+        ]);
+
+        ReservationAmenity::create([
+            'reservation_id' => $reservation->id,
+            'amenity_id' => $lakefrontPavilion->id,
+            'pricing_type' => 'Nighttime',
+            'price_at_booking' => 5200,
+            'quantity' => 1,
+            'remarks' => 'Reserved by the primary guest for the evening event',
+        ]);
+
+        ReservationAmenity::create([
+            'reservation_id' => $walkInReservation->id,
+            'amenity_id' => $gardenBbqArea->id,
+            'pricing_type' => 'Daytime',
+            'price_at_booking' => 3100,
+            'quantity' => 1,
+            'remarks' => 'Reserved by the primary guest; companion is accompanying them',
         ]);
     }
 }

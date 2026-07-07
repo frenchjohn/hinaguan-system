@@ -5,7 +5,7 @@
         ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => route('staff.dashboard'), 'icon' => 'grid'],
         ['key' => 'reservations', 'label' => 'Reservations', 'url' => '#', 'icon' => 'calendar'],
         ['key' => 'checkins', 'label' => 'Check-ins', 'url' => '#', 'icon' => 'check'],
-        ['key' => 'guests', 'label' => 'Guests', 'url' => '#', 'icon' => 'users'],
+        ['key' => 'guests', 'label' => 'Guests', 'url' => route('staff.guests'), 'icon' => 'users'],
         ['key' => 'settings', 'label' => 'Settings', 'url' => route('staff.settings'), 'icon' => 'cog'],
     ];
 @endphp

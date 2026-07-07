@@ -16,10 +16,23 @@ class Customer extends Model
         'first_name',
         'middle_name',
         'last_name',
+        'age',
         'gender',
         'nationality',
         'is_foreigner',
         'phone',
         'email',
     ];
+
+    public function reservationGuests()
+    {
+        return $this->hasMany(ReservationGuest::class, 'customer_id');
+    }
+
+    public function reservations()
+    {
+        return $this->belongsToMany(Reservation::class, 'reservation_guests')
+            ->withPivot(['is_primary_guest'])
+            ->withTimestamps();
+    }
 }
