@@ -21,7 +21,7 @@
 </head>
 <body class="antialiased">
 	<div class="dash-layout">
-		<x-staff-sidemenu active="checkins" />
+		<x-staff_sidemenu active="checkins" />
 
 		<div class="dash-main">
 			<x-header

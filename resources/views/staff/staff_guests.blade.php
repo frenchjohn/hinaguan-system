@@ -20,7 +20,7 @@
 </head>
 <body class="antialiased">
     <div class="dash-layout">
-        <x-staff-sidemenu active="guests" />
+        <x-staff_sidemenu active="guests" />
 
         <div class="dash-main">
             <x-header

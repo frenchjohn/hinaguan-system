@@ -15,9 +15,11 @@ class AdminAccount extends Model
         'name',
         'email',
         'password',
+        'password_otp',
     ];
 
     protected $hidden = [
         'password',
+        'password_otp',
     ];
 }

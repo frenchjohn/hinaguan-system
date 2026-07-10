@@ -19,6 +19,19 @@ use Illuminate\Support\Facades\Crypt;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+Route::get('/api/active-guests-count', function () {
+    $count = ReservationGuest::query()
+        ->whereNull('checked_out_at')
+        ->whereHas('reservation', function ($query) {
+            $query->where('status', 'Checked In');
+        })
+        ->count();
+
+    return response()->json([
+        'count' => $count,
+    ]);
+})->name('api.active-guests-count');
+
 Route::get('/amenities', function () {
     return view('amenities');
 })->name('amenities');
@@ -355,6 +368,128 @@ Route::prefix('admin')->name('admin.')->group(function () {
         }
         return view('admin.admin_settings');
     })->name('settings');
+
+    Route::post('/send-password-otp', function (Request $request) {
+        $user = $request->session()->get('auth_user');
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'new_password' => ['required', 'string', 'min:8'],
+        ]);
+
+        $admin = \App\Models\AdminAccount::find($user['id']);
+
+        // Verify current password
+        if (!Hash::check($data['current_password'], $admin->password)) {
+            return response()->json([
+                'errors' => [
+                    'current_password' => ['Current password is incorrect'],
+                ],
+            ], 422);
+        }
+
+        // Generate and store OTP
+        $otp = random_int(100000, 999999);
+        $admin->update(['password_otp' => $otp]);
+
+        // Send OTP email
+        try {
+            Mail::to($admin->email)->send(new \App\Mail\AdminSettingsOtpMail($otp, $admin->name));
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['message' => 'Failed to send OTP email'], 500);
+        }
+
+        return response()->json(['message' => 'OTP sent to recovery email']);
+    })->name('send-password-otp')->withoutMiddleware([VerifyCsrfToken::class]);
+
+    Route::post('/verify-password-otp', function (Request $request) {
+        $user = $request->session()->get('auth_user');
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $data = $request->validate([
+            'otp_code' => ['required', 'string', 'size:6'],
+            'new_password' => ['required', 'string', 'min:8'],
+        ]);
+
+        $admin = \App\Models\AdminAccount::find($user['id']);
+
+        // Verify OTP
+        if ($admin->password_otp !== $data['otp_code']) {
+            return response()->json(['message' => 'Invalid OTP code'], 422);
+        }
+
+        // Update password and clear OTP
+        $admin->update([
+            'password' => Hash::make($data['new_password']),
+            'password_otp' => null,
+        ]);
+
+        return response()->json(['message' => 'Password changed successfully']);
+    })->name('verify-password-otp')->withoutMiddleware([VerifyCsrfToken::class]);
+
+    Route::post('/send-email-otp', function (Request $request) {
+        $user = $request->session()->get('auth_user');
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $data = $request->validate([
+            'new_email' => ['required', 'email', 'unique:admin_accounts,email'],
+        ]);
+
+        $admin = \App\Models\AdminAccount::find($user['id']);
+
+        // Generate and store OTP
+        $otp = random_int(100000, 999999);
+        $admin->update(['password_otp' => $otp]);
+
+        // Send OTP email to CURRENT email
+        try {
+            Mail::to($admin->email)->send(new \App\Mail\AdminEmailChangeOtpMail($otp, $admin->name, $data['new_email']));
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['message' => 'Failed to send OTP email'], 500);
+        }
+
+        return response()->json(['message' => 'OTP sent to your current email']);
+    })->name('send-email-otp')->withoutMiddleware([VerifyCsrfToken::class]);
+
+    Route::post('/verify-email-otp', function (Request $request) {
+        $user = $request->session()->get('auth_user');
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $data = $request->validate([
+            'otp_code' => ['required', 'string', 'size:6'],
+            'new_email' => ['required', 'email'],
+        ]);
+
+        $admin = \App\Models\AdminAccount::find($user['id']);
+
+        // Verify OTP
+        if ($admin->password_otp !== $data['otp_code']) {
+            return response()->json(['message' => 'Invalid OTP code'], 422);
+        }
+
+        // Update email and clear OTP
+        $admin->update([
+            'email' => $data['new_email'],
+            'password_otp' => null,
+        ]);
+
+        // Update session
+        $user['email'] = $data['new_email'];
+        $request->session()->put('auth_user', $user);
+
+        return response()->json(['message' => 'Email changed successfully']);
+    })->name('verify-email-otp')->withoutMiddleware([VerifyCsrfToken::class]);
 });
 
 Route::prefix('staff')->name('staff.')->group(function () {
@@ -363,8 +498,121 @@ Route::prefix('staff')->name('staff.')->group(function () {
         if (! $user || $user['role'] !== 'staff') {
             return redirect()->route('login');
         }
-        return view('staff.staff_dashboard');
+
+        $today = now()->toDateString();
+
+        $todayCheckIns = Reservation::query()
+            ->whereDate('check_in', $today)
+            ->where('status', 'Checked In')
+            ->count();
+
+        $pendingReservationsCount = Reservation::query()
+            ->where('reservation_type', 'online')
+            ->where(function ($query) {
+                $query->where('status', 'Pending')
+                    ->orWhere('status', 'Confirmed');
+            })
+            ->count();
+
+        $guestsOnSiteCount = ReservationGuest::query()
+            ->whereNull('checked_out_at')
+            ->whereHas('reservation', function ($query) {
+                $query->where('status', 'Checked In');
+            })
+            ->count();
+
+        $recentActivity = collect([
+            [
+                'text' => 'New online reservations need confirmation.',
+                'time' => 'Just updated',
+            ],
+        ]);
+
+        $latestReservations = Reservation::query()
+            ->with(['reservationGuests.customer'])
+            ->orderByDesc('created_at')
+            ->take(4)
+            ->get();
+
+        $activityItems = $latestReservations->map(function ($reservation) {
+            $guestNames = $reservation->reservationGuests->map(function ($guestEntry) {
+                return trim(($guestEntry->customer?->first_name ?? '') . ' ' . ($guestEntry->customer?->last_name ?? ''));
+            })->filter()->implode(', ');
+
+            return [
+                'text' => $guestNames !== ''
+                    ? $guestNames . ' reserved ' . $reservation->number_of_guests . ' guest' . ($reservation->number_of_guests > 1 ? 's' : '') . ' for ' . $reservation->check_in
+                    : 'Reservation received for ' . $reservation->check_in,
+                'time' => $reservation->created_at?->diffForHumans() ?? 'recently added',
+            ];
+        })->values();
+
+        return view('staff.staff_dashboard', compact(
+            'todayCheckIns',
+            'pendingReservationsCount',
+            'guestsOnSiteCount',
+            'activityItems'
+        ));
     })->name('dashboard');
+
+    Route::get('/reservations', function (Request $request) {
+        $user = $request->session()->get('auth_user');
+        if (! $user || $user['role'] !== 'staff') {
+            return redirect()->route('login');
+        }
+
+        $reservations = Reservation::query()
+            ->with(['reservationAmenities.amenity', 'reservationGuests.customer'])
+            ->where('reservation_type', 'online')
+            ->where(function ($query) {
+                $query->where('status', 'Pending')
+                    ->orWhere('status', 'Confirmed');
+            })
+            ->orderBy('check_in')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $reservationData = $reservations->mapWithKeys(function ($reservation) {
+            return [$reservation->id => [
+                'id' => $reservation->id,
+                'booker_name' => $reservation->booker_name,
+                'phone' => $reservation->phone,
+                'email' => $reservation->email,
+                'check_in' => $reservation->check_in,
+                'number_of_guests' => $reservation->number_of_guests,
+                'status' => $reservation->status,
+                'reservation_type' => $reservation->reservation_type,
+                'total_amount' => $reservation->total_amount,
+                'amount_paid' => $reservation->amount_paid,
+                'remaining_balance' => $reservation->remaining_balance,
+                'payment_status' => $reservation->payment_status,
+                'reservation_amenities' => $reservation->reservationAmenities->map(function ($reservationAmenity) {
+                    return [
+                        'pricing_type' => $reservationAmenity->pricing_type,
+                        'price_at_booking' => $reservationAmenity->price_at_booking,
+                        'quantity' => $reservationAmenity->quantity,
+                        'remarks' => $reservationAmenity->remarks,
+                        'amenity' => [
+                            'amenities_name' => $reservationAmenity->amenity?->amenities_name,
+                        ],
+                    ];
+                })->values(),
+                'reservation_guests' => $reservation->reservationGuests->map(function ($guestEntry) {
+                    return [
+                        'is_primary_guest' => (bool) $guestEntry->is_primary_guest,
+                        'customer' => [
+                            'first_name' => $guestEntry->customer?->first_name,
+                            'last_name' => $guestEntry->customer?->last_name,
+                            'email' => $guestEntry->customer?->email,
+                            'phone' => $guestEntry->customer?->phone,
+                        ],
+                    ];
+                })->values(),
+            ]];
+        });
+
+        return view('staff.staff_reservations', compact('reservations', 'reservationData'));
+    })->name('reservations');
 
     Route::get('/check-ins', function (Request $request) {
         $user = $request->session()->get('auth_user');

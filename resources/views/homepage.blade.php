@@ -95,6 +95,18 @@
                 Escape into lush forests, crystal-clear streams, and breathtaking views.
                 A sanctuary where nature and adventure meet.
             </p>
+
+            <div class="hp-live-status" aria-live="polite">
+                <span class="hp-live-status__dot"></span>
+                <div class="hp-live-status__content">
+                    <p class="hp-live-status__label">Currently in the park</p>
+                    <p class="hp-live-status__count">
+                        <span id="activeGuestCount" data-count="{{ $activeGuestCount ?? 0 }}">{{ $activeGuestCount ?? 0 }}</span>
+                        <span class="hp-live-status__suffix">guests</span>
+                    </p>
+                </div>
+            </div>
+
             <div class="hp-hero__actions">
                 <a href="{{ route('reservation') }}" class="hp-btn hp-btn--hero">Book Now</a>
                 <a href="{{ route('amenities') }}" class="hp-btn hp-btn--ghost">View Amenities</a>

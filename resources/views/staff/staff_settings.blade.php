@@ -17,7 +17,7 @@
 </head>
 <body class="antialiased">
     <div class="dash-layout">
-        <x-staff-sidemenu active="settings" />
+        <x-staff_sidemenu active="settings" />
         <div class="dash-main">
             <x-header title="Settings" subtitle="Update your profile securely" userName="{{ session('auth_user.name') ?? 'Staff User' }}" userRole="Staff" :settingsUrl="route('staff.settings')" />
             <main class="dash-content">

@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuToggle = document.querySelector('.hp-menu-toggle');
     const mobileNav = document.querySelector('.hp-mobile-nav');
     const mobileLinks = mobileNav?.querySelectorAll('a');
+    const guestCountEl = document.getElementById('activeGuestCount');
 
     // Sticky header on scroll
     const onScroll = () => {
@@ -47,4 +48,24 @@ document.addEventListener('DOMContentLoaded', () => {
             closeMobileNav();
         });
     });
+
+    const updateActiveGuestCount = async () => {
+        if (!guestCountEl) return;
+
+        try {
+            const response = await fetch('/api/active-guests-count', {
+                headers: { Accept: 'application/json' },
+            });
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+            guestCountEl.textContent = Number(data.count ?? 0);
+        } catch (error) {
+            console.warn('Unable to refresh active guest count.', error);
+        }
+    };
+
+    updateActiveGuestCount();
+    window.setInterval(updateActiveGuestCount, 30000);
 });

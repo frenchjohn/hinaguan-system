@@ -18,7 +18,7 @@
 </head>
 <body class="antialiased">
     <div class="dash-layout">
-        <x-admin-sidemenu active="users" />
+        <x-admin_sidemenu active="users" />
 
         <div class="dash-main">
             <x-header

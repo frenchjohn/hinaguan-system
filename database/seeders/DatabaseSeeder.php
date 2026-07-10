@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
         );
 
         AdminAccount::firstOrCreate(
-            ['email' => 'admin@example.com'],
+            ['email' => 'parkhinaguan@gmail.com'],
             [
                 'name' => 'Admin User',
                 'password' => Hash::make('admin1234'),

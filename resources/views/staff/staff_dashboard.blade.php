@@ -18,7 +18,7 @@
 </head>
 <body class="antialiased">
     <div class="dash-layout">
-        <x-staff-sidemenu active="dashboard" />
+        <x-staff_sidemenu active="dashboard" />
 
         <div class="dash-main">
             <x-header
@@ -40,18 +40,18 @@
                 <div class="dash-stats">
                     <article class="dash-stat-card">
                         <p class="dash-stat-card__label">Today's Check-ins</p>
-                        <p class="dash-stat-card__value">18</p>
-                        <p class="dash-stat-card__hint">6 more expected this afternoon</p>
+                        <p class="dash-stat-card__value">{{ $todayCheckIns }}</p>
+                        <p class="dash-stat-card__hint">Reservations marked as checked in today</p>
                     </article>
                     <article class="dash-stat-card">
                         <p class="dash-stat-card__label">Pending Reservations</p>
-                        <p class="dash-stat-card__value">5</p>
-                        <p class="dash-stat-card__hint">Awaiting confirmation</p>
+                        <p class="dash-stat-card__value">{{ $pendingReservationsCount }}</p>
+                        <p class="dash-stat-card__hint">Online reservations awaiting action</p>
                     </article>
                     <article class="dash-stat-card">
                         <p class="dash-stat-card__label">Guests On-site</p>
-                        <p class="dash-stat-card__value">32</p>
-                        <p class="dash-stat-card__hint">Across all amenities</p>
+                        <p class="dash-stat-card__value">{{ $guestsOnSiteCount }}</p>
+                        <p class="dash-stat-card__hint">Guests still active and not checked out</p>
                     </article>
                 </div>
 
@@ -83,12 +83,7 @@
                             <h3 class="dash-panel__title">Recent Activity</h3>
                         </div>
                         <ul class="dash-activity-list">
-                            @foreach ([
-                                ['text' => 'Juan Dela Cruz checked in at Picnic Area B', 'time' => '10 minutes ago'],
-                                ['text' => 'New reservation submitted for Jun 26', 'time' => '45 minutes ago'],
-                                ['text' => 'Ana Reyes arrived for trail pass pickup', 'time' => '1 hour ago'],
-                                ['text' => 'Camping ground capacity updated to 85%', 'time' => '2 hours ago'],
-                            ] as $activity)
+                            @forelse ($activityItems as $activity)
                                 <li class="dash-activity">
                                     <span class="dash-activity__dot" aria-hidden="true"></span>
                                     <div>
@@ -96,7 +91,15 @@
                                         <p class="dash-activity__time">{{ $activity['time'] }}</p>
                                     </div>
                                 </li>
-                            @endforeach
+                            @empty
+                                <li class="dash-activity">
+                                    <span class="dash-activity__dot" aria-hidden="true"></span>
+                                    <div>
+                                        <p class="dash-activity__text">No recent reservation activity yet.</p>
+                                        <p class="dash-activity__time">Check back soon</p>
+                                    </div>
+                                </li>
+                            @endforelse
                         </ul>
                     </section>
                 </div>

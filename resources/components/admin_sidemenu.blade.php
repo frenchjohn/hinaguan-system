@@ -3,10 +3,8 @@
 @php
     $links = [
         ['key' => 'dashboard', 'label' => 'Dashboard', 'url' => route('admin.dashboard'), 'icon' => 'grid'],
-        ['key' => 'reservations', 'label' => 'Reservations', 'url' => '#', 'icon' => 'calendar'],
-        ['key' => 'amenities', 'label' => 'Amenities', 'url' => route('amenities'), 'icon' => 'map'],
-        ['key' => 'users', 'label' => 'Users', 'url' => '#', 'icon' => 'users'],
-        ['key' => 'reports', 'label' => 'Reports', 'url' => '#', 'icon' => 'chart'],
+        ['key' => 'amenities', 'label' => 'Amenities', 'url' => route('admin.amenities'), 'icon' => 'map'],
+        ['key' => 'users', 'label' => 'Users', 'url' => route('admin.users'), 'icon' => 'users'],
         ['key' => 'settings', 'label' => 'Settings', 'url' => route('admin.settings'), 'icon' => 'cog'],
     ];
 @endphp
