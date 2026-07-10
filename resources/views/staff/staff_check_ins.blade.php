@@ -16,7 +16,7 @@
 		'resources/css/staff_css/staff_guests.css',
 		'resources/components/css_js/header.js',
 		'resources/components/css_js/sidemenu.js',
-		'resources/js/staff_js/staff_guests.js',
+		'resources/js/staff_js/staff_check_ins.js',
 	])
 </head>
 <body class="antialiased">
@@ -39,35 +39,41 @@
 							<h3 class="dash-panel__title">Current Check-ins</h3>
 							<p class="dash-panel__subtitle">Guests currently checked in or not yet checked out</p>
 						</div>
-						<a href="#" class="guest-panel__button" data-open-add-guest-modal="true">Add Guest</a>
+						<div style="display: flex; gap: 0.5rem;">
+							<button type="button" class="guest-panel__button" id="tabGuestBtn" style="background-color: #667eea; color: white;">Guest</button>
+							<button type="button" class="guest-panel__button" id="tabReservationBtn" style="background-color: #e0e0e0; color: #333;">Reservation</button>
+							<a href="#" class="guest-panel__button" data-open-add-guest-modal="true">Add Guest</a>
+						</div>
 					</div>
 
 					@if (session('success'))
 						<div class="guest-alert">{{ session('success') }}</div>
 					@endif
 
-					@php
-						$activeCustomers = collect($customers ?? collect())->filter(function ($customer) {
-							return $customer->reservationGuests->filter(function ($guest) {
-								$reservation = $guest->reservation ?? null;
-								if (! $reservation) {
-									return false;
-								}
-								$status = strtolower(str_replace(' ', '_', (string) ($reservation->status ?? '')));
-								return $status !== 'checked_out' && $status !== 'checkedout' && $status !== 'checked-out';
-							})->isNotEmpty();
-						});
-					@endphp
+					{{-- GUEST TABLE --}}
+					<div id="guestTableSection">
+						@php
+							$activeCustomers = collect($customers ?? collect())->filter(function ($customer) {
+								return $customer->reservationGuests->filter(function ($guest) {
+									$reservation = $guest->reservation ?? null;
+									if (! $reservation) {
+										return false;
+									}
+									$status = strtolower(str_replace(' ', '_', (string) ($reservation->status ?? '')));
+									return $status !== 'checked_out' && $status !== 'checkedout' && $status !== 'checked-out';
+								})->isNotEmpty();
+							});
+						@endphp
 
-					<div class="guest-summary">
-						<div class="guest-summary-card">
-							<span>Total active guests</span>
-							<strong id="guestSummaryTotal">{{ $activeCustomers->count() }}</strong>
-						</div>
-						<div class="guest-summary-card">
-							<span>Female</span>
-							<strong id="guestSummaryFemale">0</strong>
-						</div>
+						<div class="guest-summary">
+							<div class="guest-summary-card">
+								<span>Total active guests</span>
+								<strong id="guestSummaryTotal">{{ $activeCustomers->count() }}</strong>
+							</div>
+							<div class="guest-summary-card">
+								<span>Female</span>
+								<strong id="guestSummaryFemale">0</strong>
+							</div>
 						<div class="guest-summary-card">
 							<span>Male</span>
 							<strong id="guestSummaryMale">0</strong>
@@ -194,9 +200,77 @@
 							</tbody>
 						</table>
 					</div>
+					</div>
 				</section>
 
-				{{-- Include the detail modal and add-guest modals (copied from staff_guests) --}}
+				{{-- RESERVATION TABLE --}}
+				<section class="dash-panel guest-panel" id="reservationTableSection" style="display: none;">
+					<div class="dash-panel__head guest-panel__head">
+						<div>
+							<h3 class="dash-panel__title">Active Reservations</h3>
+							<p class="dash-panel__subtitle">Reservations checked in but not yet checked out</p>
+						</div>
+					</div>
+
+					<div class="guest-summary">
+						<div class="guest-summary-card">
+							<span>Total active reservations</span>
+							<strong id="reservationSummaryTotal">{{ count($activeReservations ?? []) }}</strong>
+						</div>
+					</div>
+
+					<div class="guest-table-wrap" id="reservationTableWrap">
+						<table class="guest-table">
+							<thead>
+								<tr>
+									<th>Reservation</th>
+									<th>Check-in</th>
+									<th>Main Guest</th>
+									<th>Guests Count</th>
+									<th>Amenities</th>
+								</tr>
+							</thead>
+							<tbody id="reservationTableBody">
+								@forelse ($activeReservations ?? collect() as $reservation)
+									@php
+										$primaryGuest = $reservation->reservationGuests->firstWhere('is_primary_guest', true)?->customer;
+									@endphp
+									<tr
+										class="reservation-row"
+										data-reservation-id="{{ $reservation->id }}"
+										tabindex="0"
+										role="button"
+										aria-label="View reservation {{ $reservation->id }}"
+									>
+										<td>
+											<div class="guest-name">Reservation #{{ $reservation->id }}</div>
+											<div class="guest-meta">{{ $reservation->reservation_type === 'walk_in' ? 'Walk-in' : 'Online' }}</div>
+										</td>
+										<td>{{ $reservation->check_in }}</td>
+										<td>
+											@if ($primaryGuest)
+												<div class="guest-name">{{ trim(($primaryGuest->first_name ?? '') . ' ' . ($primaryGuest->middle_name ?? '') . ' ' . ($primaryGuest->last_name ?? '')) }}</div>
+											@else
+												<div class="guest-name">—</div>
+											@endif
+										</td>
+										<td>{{ $reservation->number_of_guests ?? $reservation->reservationGuests->count() }}</td>
+										<td>
+											@php
+												$amenityNames = $reservation->reservationAmenities->pluck('amenity.amenities_name')->filter()->unique()->join(', ');
+											@endphp
+											{{ $amenityNames ?: '—' }}
+										</td>
+									</tr>
+								@empty
+									<tr>
+										<td colspan="5" class="guest-empty">No active reservations found.</td>
+									</tr>
+								@endforelse
+							</tbody>
+						</table>
+					</div>
+				</section>
 				<div class="guest-modal" id="guestModal" aria-hidden="true">
 					<div class="guest-modal__backdrop" data-close-modal="true"></div>
 					<div class="guest-modal__content" role="dialog" aria-modal="true" aria-labelledby="guestModalTitle">
@@ -429,6 +503,22 @@
 					</div>
 				</div>
 
+				{{-- Reservation Detail Modal --}}
+				<div class="guest-modal" id="reservationModal" aria-hidden="true">
+					<div class="guest-modal__backdrop" data-close-reservation-modal="true"></div>
+					<div class="guest-modal__content" role="dialog" aria-modal="true" aria-labelledby="reservationModalTitle">
+						<button type="button" class="guest-modal__close" data-close-reservation-modal="true" aria-label="Close details">&times;</button>
+						<div class="guest-modal__header">
+							<h3 id="reservationModalTitle" class="guest-modal__title">Reservation Details</h3>
+						</div>
+						<div id="reservationModalBody" class="guest-modal__body"></div>
+						<div class="guest-form__actions" style="margin-top: 1.5rem; text-align: right;">
+							<button type="button" class="guest-form__secondary" data-close-reservation-modal="true">Close</button>
+							<button type="button" class="guest-form__button" id="reservationCheckOutBtn">Check Out</button>
+						</div>
+					</div>
+				</div>
+
 			</main>
 		</div>
 	</div>
@@ -437,4 +527,5 @@
 
 <script>
 	window.staffGuestData = @json($guestData ?? []);
+	window.staffReservationData = @json($reservationData ?? []);
 </script>

@@ -21,8 +21,27 @@
                 <div class="rp-date-card">
                     <span class="rp-date-card__label">Reservation date</span>
                     <div class="rp-date-card__picker">
-                        <input id="reservation_date" name="reservation_date" type="date" min="{{ now()->toDateString() }}" value="{{ now()->toDateString() }}">
+                        <input id="reservation_date" name="reservation_date" type="date" min="{{ now()->toDateString() }}" value="{{ now()->toDateString() }}" data-min-date="{{ now()->toDateString() }}">
                         <span id="reservationDay" class="rp-date-card__day">{{ now()->format('l') }}</span>
+                    </div>
+                    <div class="rp-date-card__weather" id="reservationWeatherPreview">
+                        @if($weatherPreview)
+                            <div class="rp-weather-preview__wrap">
+                                @if($weatherPreview['icon'])
+                                    <img src="{{ $weatherPreview['icon'] }}" alt="{{ $weatherPreview['condition'] }}" class="rp-weather-preview__icon">
+                                @endif
+                                <div class="rp-weather-preview__content">
+                                    <strong>{{ $weatherPreview['condition'] }}</strong>
+                                    @if(($weatherPreview['is_current'] ?? false) && isset($weatherPreview['temp_c']))
+                                        <span>Now {{ round($weatherPreview['temp_c']) }}°C · Feels like {{ round($weatherPreview['feelslike_c']) }}°C</span>
+                                    @else
+                                        <span>High {{ round($weatherPreview['max_temp_c']) }}°C · Low {{ round($weatherPreview['min_temp_c']) }}°C</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @else
+                            <p class="rp-weather-preview__empty">No info about the weather.</p>
+                        @endif
                     </div>
                 </div>
             </div>

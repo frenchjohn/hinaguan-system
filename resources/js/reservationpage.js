@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bookingNotice = document.getElementById('bookingNotice');
     const dateInput = document.getElementById('reservation_date');
     const reservationDay = document.getElementById('reservationDay');
+    const weatherPreview = document.getElementById('reservationWeatherPreview');
     const slotButtons = document.querySelectorAll('[data-slot]');
 
     if (!grid || cards.length === 0) {
@@ -71,6 +72,82 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateReservationDay = () => {
         if (!reservationDay || !dateInput.value) return;
         reservationDay.textContent = getWeekday(dateInput.value);
+    };
+
+    const renderWeatherPreview = (forecast) => {
+        if (!weatherPreview) return;
+
+        if (!forecast || !forecast.available) {
+            weatherPreview.innerHTML = '<p class="rp-weather-preview__empty">No info about the weather.</p>';
+            return;
+        }
+
+        const icon = forecast.icon
+            ? `<img src="${forecast.icon}" alt="${forecast.condition || 'Weather'}" class="rp-weather-preview__icon">`
+            : '';
+        const tempRange = forecast.is_current && forecast.temp_c !== null && forecast.feelslike_c !== null
+            ? `Now ${Math.round(forecast.temp_c)}°C · Feels like ${Math.round(forecast.feelslike_c)}°C`
+            : (forecast.max_temp_c !== null && forecast.min_temp_c !== null
+                ? `High ${Math.round(forecast.max_temp_c)}°C · Low ${Math.round(forecast.min_temp_c)}°C`
+                : 'Forecast available for this date');
+        const rainHint = forecast.chance_of_rain !== null && forecast.chance_of_rain !== undefined
+            ? `<span class="rp-weather-preview__rain">Rain chance: ${forecast.chance_of_rain}%</span>`
+            : '';
+
+        weatherPreview.innerHTML = `
+            <div class="rp-weather-preview__wrap">
+                ${icon}
+                <div class="rp-weather-preview__content">
+                    <strong>${forecast.condition || 'Forecast available'}</strong>
+                    <span>${tempRange}</span>
+                    ${rainHint}
+                </div>
+            </div>
+        `;
+    };
+
+    const loadWeatherPreview = async (dateString) => {
+        if (!weatherPreview || !dateString) return;
+
+        const minDate = dateInput?.dataset.minDate;
+
+        if (minDate && dateString < minDate) {
+            dateInput.value = minDate;
+        }
+
+        if (!dateInput.value) return;
+
+        try {
+            const url = new URL('/reservation/weather-preview', window.location.origin);
+            url.searchParams.set('date', dateInput.value);
+
+            const response = await fetch(url.toString(), {
+                headers: { Accept: 'application/json' },
+            });
+
+            if (!response.ok) {
+                throw new Error('Weather preview request failed');
+            }
+
+            const payload = await response.json();
+            renderWeatherPreview(payload);
+        } catch (error) {
+            renderWeatherPreview({ available: false });
+        }
+    };
+
+    const syncReservationDate = () => {
+        if (!dateInput) return;
+
+        const minDate = dateInput.dataset.minDate;
+
+        if (minDate && dateInput.value < minDate) {
+            dateInput.value = minDate;
+        }
+
+        updateReservationDay();
+        applyFilters();
+        loadWeatherPreview(dateInput.value);
     };
 
     const isAvailableForSlot = (card, dateString, slot) => {
@@ -414,13 +491,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    dateInput.addEventListener('change', () => {
-        updateReservationDay();
-        applyFilters();
-    });
+    if (dateInput) {
+        dateInput.addEventListener('change', syncReservationDate);
+        dateInput.addEventListener('input', syncReservationDate);
+    }
 
     updateReservationDay();
     applyFilters();
+    syncReservationDate();
 
     slotButtons.forEach(button => {
         button.addEventListener('click', () => setActiveSlot(button.dataset.slot));

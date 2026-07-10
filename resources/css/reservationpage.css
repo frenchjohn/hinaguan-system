@@ -127,6 +127,42 @@
     text-transform: capitalize;
 }
 
+.rp-date-card__weather {
+    padding: 1rem 1.05rem;
+    border-radius: 1rem;
+    background: #ffffff;
+    border: 1px solid #dbeafe;
+}
+
+.rp-weather-preview__wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.rp-weather-preview__icon {
+    width: 3rem;
+    height: 3rem;
+    object-fit: contain;
+}
+
+.rp-weather-preview__content {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.rp-weather-preview__content strong {
+    color: #102a43;
+    font-size: 0.95rem;
+}
+
+.rp-weather-preview__content span,
+.rp-weather-preview__rain,
+.rp-weather-preview__empty {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
 .rp-slotbar {
     display: flex;
     flex-wrap: wrap;

@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Check_out is already nullable in the create table migration
-        // This migration can be safely ignored
+        Schema::table('reservations', function (Blueprint $table) {
+            $table->date('check_in')->nullable()->change();
+        });
     }
 
     /**
@@ -20,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // No action needed on rollback
+        Schema::table('reservations', function (Blueprint $table) {
+            $table->date('check_in')->nullable(false)->change();
+        });
     }
 };
