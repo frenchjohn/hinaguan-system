@@ -21,6 +21,7 @@ class Reservation extends Model
         'booker_name',
         'phone',
         'email',
+        'reservation_date',
         'check_in',
         'check_out',
         'number_of_guests',
@@ -32,14 +33,17 @@ class Reservation extends Model
         'payment_status',
     ];
 
-    public function reservationAmenities()
-    {
-        return $this->hasMany(ReservationAmenity::class, 'reservation_id');
-    }
-
     protected $casts = [
+        'reservation_date' => 'date',
+        'check_in' => 'date',
+        'check_out' => 'date',
         'total_amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
         'remaining_balance' => 'decimal:2',
     ];
+
+    public function reservationAmenities()
+    {
+        return $this->hasMany(ReservationAmenity::class, 'reservation_id');
+    }
 }

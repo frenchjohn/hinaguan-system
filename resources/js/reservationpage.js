@@ -665,6 +665,7 @@ document.addEventListener('DOMContentLoaded', () => {
             phone: formData.get('phone'),
             email: formData.get('email'),
             number_of_guests: Number(formData.get('number_of_guests')),
+            reservation_date: dateInput.value,
             check_in: dateInput.value,
             check_out: dateInput.value,
             slot: selectedSlot,

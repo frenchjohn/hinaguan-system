@@ -84,7 +84,7 @@
                                     @forelse($recentReservations as $reservation)
                                         <tr>
                                             <td>{{ $reservation->booker_name }}</td>
-                                            <td>{{ $reservation->check_in ? \Illuminate\Support\Carbon::parse($reservation->check_in)->format('M d, Y') : 'TBD' }}</td>
+                                            <td>{{ $reservation->reservation_date ? \Illuminate\Support\Carbon::parse($reservation->reservation_date)->format('M d, Y') : 'TBD' }}</td>
                                             <td>{{ $reservation->reservationAmenities->pluck('amenity.amenities_name')->filter()->join(', ') ?: 'None' }}</td>
                                             <td>
                                                 <span class="dash-badge dash-badge--{{ strtolower($reservation->status) }}">{{ $reservation->status }}</span>

@@ -101,12 +101,15 @@ Route::post('/reservation/prototype', function (Request $request) {
         'email' => ['required', 'email', 'max:255'],
         'number_of_guests' => ['required', 'integer', 'min:1'],
         'check_in' => ['nullable', 'date'],
+        'reservation_date' => ['nullable', 'date'],
         'slot' => ['nullable', 'string'],
         'amenities' => ['required', 'array', 'min:1'],
         'amenities.*.amenity_id' => ['required', 'string'],
         'amenities.*.pricing_type' => ['required', 'string'],
         'amenities.*.price_at_booking' => ['required', 'numeric'],
     ]);
+
+    $reservationDate = $data['reservation_date'] ?? $data['check_in'] ?? null;
 
     // Calculate total from all amenities
     $totalAmount = array_sum(array_column($data['amenities'], 'price_at_booking'));
@@ -115,6 +118,7 @@ Route::post('/reservation/prototype', function (Request $request) {
         'booker_name' => $data['booker_name'],
         'phone' => $data['phone'],
         'email' => $data['email'],
+        'reservation_date' => $reservationDate,
         'check_in' => null,
         'number_of_guests' => $data['number_of_guests'],
         'status' => 'Pending',
@@ -124,22 +128,7 @@ Route::post('/reservation/prototype', function (Request $request) {
         'payment_status' => 'Partially Paid',
     ]);
 
-    $customer = Customer::create([
-        'first_name' => $data['booker_name'],
-        'middle_name' => null,
-        'last_name' => '',
-        'gender' => 'Male',
-        'nationality' => 'Filipino',
-        'is_foreigner' => false,
-        'phone' => $data['phone'],
-        'email' => $data['email'],
-    ]);
-
-    ReservationGuest::create([
-        'reservation_id' => $reservation->id,
-        'customer_id' => $customer->id,
-        'is_primary_guest' => true,
-    ]);
+    // Don't create customer yet - only create when staff checks in and fills the check-in modal
 
     // Create a ReservationAmenity record for each amenity
     foreach ($data['amenities'] as $amenity) {
@@ -517,8 +506,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         $mostBookedAmenityCount = $amenityBreakdown->first()['count'] ?? 0;
 
         $dailyBookingCounts = $reservations
-            ->filter(fn ($reservation) => $reservation->check_in)
-            ->groupBy(fn ($reservation) => $reservation->check_in)
+            ->filter(fn ($reservation) => $reservation->reservation_date)
+            ->groupBy(fn ($reservation) => $reservation->reservation_date)
             ->map->count()
             ->sortDesc();
 
@@ -526,8 +515,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         $peakBookedDayCount = $dailyBookingCounts->first() ?? 0;
 
         $monthlyBookingCounts = $reservations
-            ->filter(fn ($reservation) => $reservation->check_in)
-            ->groupBy(fn ($reservation) => \Illuminate\Support\Carbon::parse($reservation->check_in)->format('F Y'))
+            ->filter(fn ($reservation) => $reservation->reservation_date)
+            ->groupBy(fn ($reservation) => \Illuminate\Support\Carbon::parse($reservation->reservation_date)->format('F Y'))
             ->map->count()
             ->sortDesc();
 
@@ -547,7 +536,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->values();
 
         $checkInDates = $reservations
-            ->pluck('check_in')
+            ->pluck('reservation_date')
             ->filter()
             ->sort()
             ->values();
@@ -800,6 +789,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
                 'booker_name' => $reservation->booker_name,
                 'phone' => $reservation->phone,
                 'email' => $reservation->email,
+                'reservation_date' => $reservation->reservation_date,
                 'check_in' => $reservation->check_in,
                 'number_of_guests' => $reservation->number_of_guests,
                 'status' => $reservation->status,
@@ -852,7 +842,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
 
         $reservations = Reservation::query()
             ->with(['reservationAmenities.amenity', 'reservationGuests.customer'])
-            ->orderByDesc('check_in')
+            ->orderByDesc('reservation_date')
             ->get();
 
         $reportRows = $reservations->map(function ($reservation) {
@@ -863,6 +853,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
             return [
                 'id' => $reservation->id,
                 'customer_name' => $customerName ?: $reservation->booker_name,
+                'reservation_date' => $reservation->reservation_date,
                 'check_in' => $reservation->check_in,
                 'amenities' => $amenityNames->isEmpty() ? 'None' : $amenityNames->join(', '),
                 'status' => $reservation->status,
@@ -877,9 +868,9 @@ Route::prefix('staff')->name('staff.')->group(function () {
         })->unique()->sort()->values();
         $statusOptions = $reportRows->pluck('status')->unique()->sort()->values();
 
-        $checkInDates = $reportRows->pluck('check_in')->filter();
-        $firstCheckInDate = $checkInDates->min() ?? now()->toDateString();
-        $lastCheckInDate = $checkInDates->max() ?? now()->toDateString();
+        $reservationDates = $reportRows->pluck('reservation_date')->filter();
+        $firstCheckInDate = $reservationDates->min() ?? now()->toDateString();
+        $lastCheckInDate = $reservationDates->max() ?? now()->toDateString();
 
         $totalReservations = $reportRows->count();
         $customerCount = $reportRows->pluck('customer_name')->unique()->count();
@@ -924,6 +915,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
             ->get();
 
         $activeReservations = Reservation::where('status', 'Checked In')
+            ->whereNotNull('check_in')
             ->whereNull('check_out')
             ->with(['reservationGuests' => function ($query) {
                 $query->with('customer');
@@ -1019,6 +1011,75 @@ Route::prefix('staff')->name('staff.')->group(function () {
 
         return view('staff.staff_check_ins', compact('customers', 'guestData', 'amenities', 'activeReservations', 'reservationData'));
     })->name('checkins');
+
+    Route::get('/check-ins/lookup', function (Request $request) {
+        $user = $request->session()->get('auth_user');
+        if (! $user || $user['role'] !== 'staff') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $reservationId = $request->query('reservation_id');
+        if (! $reservationId) {
+            return response()->json(['message' => 'Reservation ID is required'], 422);
+        }
+
+        $reservation = Reservation::query()
+            ->with(['reservationGuests.customer', 'reservationAmenities.amenity'])
+            ->where('id', $reservationId)
+            ->where('reservation_type', 'online')
+            ->whereIn('status', ['Pending', 'Confirmed', 'Checked In'])
+            ->first();
+
+        if (! $reservation) {
+            return response()->json(['message' => 'Reservation not found or cannot be checked in.'], 404);
+        }
+
+        return response()->json([
+            'reservation' => [
+                'id' => $reservation->id,
+                'booker_name' => $reservation->booker_name,
+                'email' => $reservation->email,
+                'phone' => $reservation->phone,
+                'reservation_date' => $reservation->reservation_date,
+                'check_in' => $reservation->check_in,
+                'check_out' => $reservation->check_out,
+                'reservation_type' => $reservation->reservation_type,
+                'number_of_guests' => $reservation->number_of_guests,
+                'status' => $reservation->status,
+                'payment_status' => $reservation->payment_status,
+                'total_amount' => $reservation->total_amount,
+                'amount_paid' => $reservation->amount_paid,
+                'remaining_balance' => $reservation->remaining_balance,
+                'reservation_guests' => $reservation->reservationGuests->map(function ($guestEntry) {
+                    $customer = $guestEntry->customer;
+                    return [
+                        'id' => $guestEntry->id,
+                        'customer_id' => $guestEntry->customer_id,
+                        'is_primary_guest' => (bool) $guestEntry->is_primary_guest,
+                        'checked_out_at' => $guestEntry->checked_out_at,
+                        'customer' => [
+                            'first_name' => $customer?->first_name,
+                            'middle_name' => $customer?->middle_name,
+                            'last_name' => $customer?->last_name,
+                            'age' => $customer?->age,
+                            'gender' => $customer?->gender,
+                            'nationality' => $customer?->nationality,
+                            'phone' => $customer?->phone,
+                            'email' => $customer?->email,
+                        ],
+                    ];
+                })->values(),
+                'reservation_amenities' => $reservation->reservationAmenities->map(function ($amenity) {
+                    return [
+                        'amenity_name' => $amenity->amenity?->amenities_name,
+                        'pricing_type' => $amenity->pricing_type,
+                        'price_at_booking' => $amenity->price_at_booking,
+                        'quantity' => $amenity->quantity,
+                    ];
+                })->values(),
+            ],
+        ]);
+    })->name('checkins.lookup');
 
     Route::get('/guests', function (Request $request) {
         $user = $request->session()->get('auth_user');

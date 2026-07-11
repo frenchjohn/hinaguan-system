@@ -20,7 +20,8 @@ return new class extends Migration
             $table->string('email');
 
             // Reservation Details
-            $table->date('check_in');
+            $table->date('reservation_date')->nullable();
+            $table->date('check_in')->nullable();
             $table->date('check_out')->nullable();
             $table->unsignedInteger('number_of_guests');
             $table->enum('reservation_type', ['walk_in', 'online'])->default('online');

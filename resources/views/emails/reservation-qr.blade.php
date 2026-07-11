@@ -24,7 +24,9 @@
 
             <div style="text-align:center; padding:8px 0 16px;">
                 <p style="margin:0 0 12px; font-size:15px; font-weight:600; color:#2d3a2c;">Scan this QR code at arrival</p>
-                <img src="{{ $qrImageUrl }}" alt="Reservation QR code" width="240" height="240" style="display:block; margin:0 auto; border-radius:16px; border:1px solid #e7dcc7; background:#ffffff; padding:10px;" />
+                <div style="display:inline-block; width:100%; max-width:320px; padding:10px; background:#ffffff; border:1px solid #e7dcc7; border-radius:18px;">
+                    <img src="{{ $qrImageUrl }}" alt="Reservation QR code" style="display:block; width:100%; max-width:300px; height:auto; margin:0 auto; border-radius:16px; background:#ffffff;" />
+                </div>
             </div>
 
             <p style="margin:18px 0 0; font-size:14px; line-height:1.7; color:#5f6d5d;">On your reserved date, staff can scan this QR code to confirm your arrival and check your reservation in.</p>

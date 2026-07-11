@@ -170,6 +170,14 @@
     outline: none;
 }
 
+.today-reservation {
+    background: #eef6ed;
+}
+
+.today-reservation td {
+    color: #166534;
+}
+
 .guest-name {
     font-weight: 600;
     color: #111827;
@@ -502,6 +510,18 @@
 .guest-modal__body {
     display: grid;
     gap: 1rem;
+}
+
+.scan-modal__scanner,
+#qrScanner {
+    width: 100%;
+    max-width: 380px;
+    min-height: 320px;
+    border: 1px solid #d1d5db;
+    border-radius: 1rem;
+    overflow: hidden;
+    margin: 0 auto;
+    background: #000;
 }
 
 .guest-card {

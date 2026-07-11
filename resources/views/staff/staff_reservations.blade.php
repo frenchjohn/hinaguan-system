@@ -46,10 +46,15 @@
                     @endif
 
                     <div class="guest-filter-shell">
-                        <button type="button" class="guest-filter-toggle" id="reservationFilterToggle" aria-expanded="false" aria-controls="reservationFilterPanel">
-                            <span>Filters</span>
-                            <span class="guest-filter-toggle__icon">▾</span>
-                        </button>
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                            <button type="button" class="guest-filter-toggle" id="reservationFilterToggle" aria-expanded="false" aria-controls="reservationFilterPanel">
+                                <span>Filters</span>
+                                <span class="guest-filter-toggle__icon">▾</span>
+                            </button>
+                            <button type="button" class="guest-filter-toggle guest-filter-toggle--secondary" id="scanQrBtn">
+                                <span>Scan QR</span>
+                            </button>
+                        </div>
                         <div class="guest-toolbar guest-toolbar--collapsed" id="reservationFilterPanel" hidden>
                             <label class="guest-toolbar__field guest-toolbar__field--search">
                                 <span>Search</span>
@@ -58,8 +63,8 @@
                             <label class="guest-toolbar__field">
                                 <span>Sort by</span>
                                 <select id="reservationSortSelect">
-                                    <option value="date-asc">Check-in date (soonest)</option>
-                                    <option value="date-desc">Check-in date (latest)</option>
+                                    <option value="date-asc">Reservation date (soonest)</option>
+                                    <option value="date-desc">Reservation date (latest)</option>
                                     <option value="name-asc">Booker (A-Z)</option>
                                     <option value="name-desc">Booker (Z-A)</option>
                                     <option value="amount-desc">Amount (High-Low)</option>
@@ -74,12 +79,12 @@
                                 </select>
                             </label>
                             <label class="guest-toolbar__field">
-                                <span>Check-in from</span>
-                                <input type="date" id="reservationCheckInFrom">
+                                <span>Reservation date from</span>
+                                <input type="date" id="reservationDateFrom">
                             </label>
                             <label class="guest-toolbar__field">
-                                <span>Check-in to</span>
-                                <input type="date" id="reservationCheckInTo">
+                                <span>Reservation date to</span>
+                                <input type="date" id="reservationDateTo">
                             </label>
                             <button type="button" class="guest-toolbar__clear" id="reservationFiltersClear">Clear</button>
                         </div>
@@ -94,7 +99,7 @@
                             <thead>
                                 <tr>
                                     <th>Booker</th>
-                                    <th>Check-in</th>
+                                    <th>Reservation date</th>
                                     <th>Guests</th>
                                     <th>Status</th>
                                     <th>Amount</th>
@@ -103,12 +108,12 @@
                             <tbody id="reservationTableBody">
                                 @forelse ($reservations as $reservation)
                                     <tr
-                                        class="guest-row reservation-row"
+                                        class="guest-row reservation-row {{ $reservation->reservation_date === now()->toDateString() ? 'today-reservation' : '' }}"
                                         data-reservation-id="{{ $reservation->id }}"
                                         data-booker-name="{{ e($reservation->booker_name) }}"
                                         data-email="{{ e($reservation->email) }}"
                                         data-phone="{{ e($reservation->phone) }}"
-                                        data-check-in="{{ $reservation->check_in }}"
+                                        data-reservation-date="{{ $reservation->reservation_date }}"
                                         data-status="{{ strtolower($reservation->status) }}"
                                         data-guests="{{ $reservation->number_of_guests }}"
                                         data-total-amount="{{ (float) $reservation->total_amount }}"
@@ -121,7 +126,7 @@
                                             <div class="guest-name">{{ $reservation->booker_name }}</div>
                                             <div class="guest-meta">{{ $reservation->email }}</div>
                                         </td>
-                                        <td>{{ $reservation->check_in }}</td>
+                                        <td>{{ $reservation->reservation_date }}</td>
                                         <td>{{ $reservation->number_of_guests }}</td>
                                         <td>
                                             <span class="reservation-status reservation-status--{{ strtolower($reservation->status) }}">{{ $reservation->status }}</span>
@@ -236,9 +241,30 @@
 
                             <div class="guest-form__actions">
                                 <button type="button" class="guest-form__secondary" data-close-check-in-modal="true">Cancel</button>
-                                <button type="submit" class="guest-form__button">Create Reservation</button>
+                                <button type="submit" class="guest-form__button">Check In</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+
+                <div class="guest-modal guest-modal--add" id="scanQrModal" aria-hidden="true">
+                    <div class="guest-modal__backdrop" data-close-scan-modal="true"></div>
+                    <div class="guest-modal__content guest-modal__content--wide" role="dialog" aria-modal="true" aria-labelledby="scanQrModalTitle">
+                        <button type="button" class="guest-modal__close" data-close-scan-modal="true" aria-label="Close QR scanner">&times;</button>
+                        <h3 id="scanQrModalTitle" class="guest-modal__title">Scan Reservation QR</h3>
+                        <div class="guest-form__section">
+                            <div id="qrScanner" class="scan-modal__scanner"></div>
+                            <p class="scan-modal__hint">Allow camera access and hold the reservation QR code in front of the lens.</p>
+                            <label class="guest-form__field" style="margin-top:0.75rem;">
+                                <span>Camera</span>
+                                <select id="qrCameraSelect" style="width:100%; padding:0.75rem 0.85rem; border:1px solid #d1d5db; border-radius:0.75rem; background:#fff;"></select>
+                            </label>
+                            <div class="scan-modal__status" id="qrScannerStatus">Ready to scan</div>
+                        </div>
+                        <div class="guest-form__actions" style="margin-top: 1rem;">
+                            <button type="button" class="guest-form__secondary" data-close-scan-modal="true">Cancel</button>
+                            <button type="button" class="guest-form__button" id="stopQrBtn">Stop Scanner</button>
+                        </div>
                     </div>
                 </div>
 

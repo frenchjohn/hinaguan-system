@@ -225,9 +225,9 @@
                             </thead>
                             <tbody>
                                 @forelse($reservations as $reservation)
-                                    <tr data-amenity="{{ $reservation->reservationAmenities->pluck('amenity.amenities_name')->filter()->join(', ') }}" data-status="{{ $reservation->status }}" data-checkin="{{ $reservation->check_in }}">
+                                    <tr data-amenity="{{ $reservation->reservationAmenities->pluck('amenity.amenities_name')->filter()->join(', ') }}" data-status="{{ $reservation->status }}" data-checkin="{{ $reservation->reservation_date }}">
                                         <td>{{ $reservation->booker_name }}</td>
-                                        <td>{{ $reservation->check_in ? \Illuminate\Support\Carbon::parse($reservation->check_in)->format('M d, Y') : 'TBD' }}</td>
+                                        <td>{{ $reservation->reservation_date ? \Illuminate\Support\Carbon::parse($reservation->reservation_date)->format('M d, Y') : 'TBD' }}</td>
                                         <td>{{ $reservation->number_of_guests }}</td>
                                         <td>{{ $reservation->reservationAmenities->pluck('amenity.amenities_name')->filter()->join(', ') ?: 'None' }}</td>
                                         <td>
