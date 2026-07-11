@@ -24,7 +24,7 @@
 
 .dash-stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
     gap: 1rem;
     margin-bottom: 1.5rem;
 }
@@ -94,7 +94,37 @@
     background: var(--dash-green-soft);
 }
 
-.dash-panel__title {
+.dash-panel__body--metric-list {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+}
+
+.dash-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.95rem 1rem;
+    border-radius: 0.85rem;
+    border: 1px solid var(--dash-border);
+    background: #f8fafc;
+}
+
+.dash-summary-item span {
+    color: var(--dash-text-muted);
+    font-size: 0.85rem;
+}
+
+.dash-summary-item strong {
+    color: var(--dash-green-dark);
+    font-size: 1rem;
+}
+
+.dash-panel__head--secondary {
+    margin-top: 0.75rem;
+}
+
+.dash-table-wrap {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;

@@ -40,23 +40,27 @@
                 <div class="dash-stats">
                     <article class="dash-stat-card">
                         <p class="dash-stat-card__label">Total Reservations</p>
-                        <p class="dash-stat-card__value">128</p>
-                        <span class="dash-stat-card__change dash-stat-card__change--up">+12% this month</span>
+                        <p class="dash-stat-card__value">{{ $totalReservations }}</p>
                     </article>
                     <article class="dash-stat-card">
-                        <p class="dash-stat-card__label">Today's Visitors</p>
-                        <p class="dash-stat-card__value">47</p>
-                        <span class="dash-stat-card__change dash-stat-card__change--up">+5 from yesterday</span>
+                        <p class="dash-stat-card__label">Total Guests</p>
+                        <p class="dash-stat-card__value">{{ $totalGuests }}</p>
                     </article>
                     <article class="dash-stat-card">
                         <p class="dash-stat-card__label">Revenue (Month)</p>
-                        <p class="dash-stat-card__value">₱84.2k</p>
-                        <span class="dash-stat-card__change dash-stat-card__change--up">On track</span>
+                        <p class="dash-stat-card__value">₱{{ number_format($currentMonthRevenue, 2) }}</p>
                     </article>
                     <article class="dash-stat-card">
-                        <p class="dash-stat-card__label">Pending Approvals</p>
-                        <p class="dash-stat-card__value">9</p>
-                        <span class="dash-stat-card__change dash-stat-card__change--warn">Needs review</span>
+                        <p class="dash-stat-card__label">Pending Reservations</p>
+                        <p class="dash-stat-card__value">{{ $pendingReservations }}</p>
+                    </article>
+                    <article class="dash-stat-card">
+                        <p class="dash-stat-card__label">Checked-in Guests</p>
+                        <p class="dash-stat-card__value">{{ $checkedInGuests }}</p>
+                    </article>
+                    <article class="dash-stat-card reports-metric-card--alert">
+                        <p class="dash-stat-card__label">Cancelled Reservations</p>
+                        <p class="dash-stat-card__value">{{ $cancelledReservations }}</p>
                     </article>
                 </div>
 
@@ -64,7 +68,7 @@
                     <section class="dash-panel">
                         <div class="dash-panel__head">
                             <h3 class="dash-panel__title">Recent Reservations</h3>
-                            <a href="#" class="dash-panel__link">View all</a>
+                            <a href="{{ route('admin.reports') }}" class="dash-panel__link">View reports</a>
                         </div>
                         <div class="dash-table-wrap">
                             <table class="dash-table">
@@ -77,21 +81,20 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ([
-                                        ['name' => 'Maria Santos', 'date' => 'Jun 22, 2026', 'amenity' => 'Cottage A', 'status' => 'confirmed'],
-                                        ['name' => 'Juan Dela Cruz', 'date' => 'Jun 23, 2026', 'amenity' => 'Picnic Area', 'status' => 'pending'],
-                                        ['name' => 'Ana Reyes', 'date' => 'Jun 24, 2026', 'amenity' => 'Camping Ground', 'status' => 'confirmed'],
-                                        ['name' => 'Pedro Gomez', 'date' => 'Jun 25, 2026', 'amenity' => 'Trail Pass', 'status' => 'cancelled'],
-                                    ] as $row)
+                                    @forelse($recentReservations as $reservation)
                                         <tr>
-                                            <td>{{ $row['name'] }}</td>
-                                            <td>{{ $row['date'] }}</td>
-                                            <td>{{ $row['amenity'] }}</td>
+                                            <td>{{ $reservation->booker_name }}</td>
+                                            <td>{{ $reservation->check_in ? \Illuminate\Support\Carbon::parse($reservation->check_in)->format('M d, Y') : 'TBD' }}</td>
+                                            <td>{{ $reservation->reservationAmenities->pluck('amenity.amenities_name')->filter()->join(', ') ?: 'None' }}</td>
                                             <td>
-                                                <span class="dash-badge dash-badge--{{ $row['status'] }}">{{ ucfirst($row['status']) }}</span>
+                                                <span class="dash-badge dash-badge--{{ strtolower($reservation->status) }}">{{ $reservation->status }}</span>
                                             </td>
                                         </tr>
-                                    @endforeach
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="dash-table-empty">No recent reservations yet.</td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -99,17 +102,34 @@
 
                     <section class="dash-panel">
                         <div class="dash-panel__head">
+                            <h3 class="dash-panel__title">Key metrics</h3>
+                        </div>
+                        <div class="dash-panel__body dash-panel__body--metric-list">
+                            <div class="dash-summary-item">
+                                <span>Total guests checked in</span>
+                                <strong>{{ $checkedInGuests }}</strong>
+                            </div>
+                            <div class="dash-summary-item">
+                                <span>Unique customers</span>
+                                <strong>{{ $uniqueCustomerCount }}</strong>
+                            </div>
+                            <div class="dash-summary-item">
+                                <span>Top booked amenity</span>
+                                <strong>{{ $topAmenity['name'] ?? 'N/A' }} ({{ $topAmenity['count'] ?? 0 }})</strong>
+                            </div>
+                        </div>
+                        <div class="dash-panel__head dash-panel__head--secondary">
                             <h3 class="dash-panel__title">Quick Actions</h3>
                         </div>
                         <ul class="dash-quick-actions">
                             <li>
-                                <a href="#">
+                                <a href="{{ route('reservation') }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                                     New Reservation
                                 </a>
                             </li>
                             <li>
-                                <a href="{{ route('amenities') }}">
+                                <a href="{{ route('admin.amenities') }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                     Manage Amenities
                                 </a>

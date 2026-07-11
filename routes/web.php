@@ -187,7 +187,65 @@ Route::prefix('admin')->name('admin.')->group(function () {
         if (! $user || $user['role'] !== 'admin') {
             return redirect()->route('login');
         }
-        return view('admin.admin_dashboard');
+
+        $reservations = Reservation::with(['reservationAmenities.amenity', 'reservationGuests.customer'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $totalReservations = $reservations->count();
+        $totalGuests = $reservations->sum('number_of_guests');
+        $todayVisitors = $reservations
+            ->where('check_in', now()->toDateString())
+            ->sum('number_of_guests');
+        $currentMonthRevenue = $reservations
+            ->filter(fn ($reservation) => $reservation->check_in && \Illuminate\Support\Carbon::parse($reservation->check_in)->isCurrentMonth())
+            ->sum('amount_paid');
+        $pendingReservations = $reservations->where('status', 'Pending')->count();
+        $cancelledReservations = $reservations->where('status', 'Cancelled')->count();
+        $checkedInGuests = ReservationGuest::query()
+            ->whereNull('checked_out_at')
+            ->whereHas('reservation', function ($query) {
+                $query->where('status', 'Checked In');
+            })
+            ->count();
+
+        $uniqueCustomerCount = $reservations
+            ->flatMap(function ($reservation) {
+                $guestNames = $reservation->reservationGuests
+                    ->map(fn ($guest) => trim(($guest->customer?->first_name ?? '') . ' ' . ($guest->customer?->last_name ?? '')))
+                    ->filter();
+
+                return $guestNames->push($reservation->booker_name)->filter();
+            })
+            ->unique()
+            ->filter()
+            ->count();
+
+        $topAmenity = $reservations
+            ->flatMap(fn ($reservation) => $reservation->reservationAmenities)
+            ->groupBy(fn ($item) => $item->amenity?->amenities_name ?? 'Unknown')
+            ->map(fn ($items) => [
+                'name' => $items->first()->amenity?->amenities_name ?? 'Unknown',
+                'count' => $items->count(),
+            ])
+            ->sortByDesc('count')
+            ->values()
+            ->first();
+
+        $recentReservations = $reservations->take(4);
+
+        return view('admin.admin_dashboard', [
+            'totalReservations' => $totalReservations,
+            'totalGuests' => $totalGuests,
+            'todayVisitors' => $todayVisitors,
+            'currentMonthRevenue' => $currentMonthRevenue,
+            'pendingReservations' => $pendingReservations,
+            'cancelledReservations' => $cancelledReservations,
+            'checkedInGuests' => $checkedInGuests,
+            'uniqueCustomerCount' => $uniqueCustomerCount,
+            'topAmenity' => $topAmenity,
+            'recentReservations' => $recentReservations,
+        ]);
     })->name('dashboard');
 
     Route::get('/amenities', function (Request $request) {
@@ -389,6 +447,138 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         return redirect()->route('admin.users')->with('success', 'Staff account deleted successfully.');
     })->name('users.destroy');
+
+    Route::get('/reports', function (Request $request) {
+        $user = $request->session()->get('auth_user');
+        if (! $user || $user['role'] !== 'admin') {
+            return redirect()->route('login');
+        }
+
+        $reservations = Reservation::with(['reservationAmenities.amenity', 'reservationGuests.customer'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $totalReservations = $reservations->count();
+        $checkedInGuests = ReservationGuest::query()
+            ->whereNull('checked_out_at')
+            ->whereHas('reservation', function ($query) {
+                $query->where('status', 'Checked In');
+            })
+            ->count();
+
+        $revenue = $reservations->sum('amount_paid');
+        $pendingReservations = $reservations->where('status', 'Pending')->count();
+        $cancelledReservations = $reservations->where('status', 'Cancelled')->count();
+
+        $reservationTypeBreakdown = $reservations
+            ->groupBy('reservation_type')
+            ->map(fn ($items, $type) => [
+                'type' => ucfirst(str_replace('_', ' ', $type)),
+                'count' => $items->count(),
+            ])
+            ->values();
+
+        $paymentStatusBreakdown = $reservations
+            ->groupBy('payment_status')
+            ->map(fn ($items, $status) => [
+                'status' => $status,
+                'count' => $items->count(),
+            ])
+            ->values();
+
+        $amenityBreakdown = $reservations
+            ->flatMap(fn ($reservation) => $reservation->reservationAmenities)
+            ->groupBy(fn ($item) => $item->amenity?->amenities_name ?? 'Unknown')
+            ->map(fn ($items) => [
+                'name' => $items->first()->amenity?->amenities_name ?? 'Unknown',
+                'count' => $items->count(),
+                'revenue' => $items->sum(fn ($item) => (float) $item->price_at_booking * (int) $item->quantity),
+            ])
+            ->sortByDesc('count')
+            ->values();
+
+        $totalGuests = $reservations->sum('number_of_guests');
+
+        $uniqueCustomers = $reservations
+            ->flatMap(function ($reservation) {
+                $guestNames = $reservation->reservationGuests
+                    ->map(fn ($guest) => trim(($guest->customer?->first_name ?? '') . ' ' . ($guest->customer?->last_name ?? '')))
+                    ->filter();
+
+                return $guestNames->push($reservation->booker_name)->filter();
+            })
+            ->unique()
+            ->filter()
+            ->values();
+
+        $customerCount = $uniqueCustomers->count();
+
+        $mostBookedAmenity = $amenityBreakdown->first()['name'] ?? 'None';
+        $mostBookedAmenityCount = $amenityBreakdown->first()['count'] ?? 0;
+
+        $dailyBookingCounts = $reservations
+            ->filter(fn ($reservation) => $reservation->check_in)
+            ->groupBy(fn ($reservation) => $reservation->check_in)
+            ->map->count()
+            ->sortDesc();
+
+        $peakBookedDay = $dailyBookingCounts->keys()->first() ?? null;
+        $peakBookedDayCount = $dailyBookingCounts->first() ?? 0;
+
+        $monthlyBookingCounts = $reservations
+            ->filter(fn ($reservation) => $reservation->check_in)
+            ->groupBy(fn ($reservation) => \Illuminate\Support\Carbon::parse($reservation->check_in)->format('F Y'))
+            ->map->count()
+            ->sortDesc();
+
+        $peakBookedMonth = $monthlyBookingCounts->keys()->first() ?? null;
+        $peakBookedMonthCount = $monthlyBookingCounts->first() ?? 0;
+
+        $amenityOptions = $amenityBreakdown
+            ->pluck('name')
+            ->unique()
+            ->sort()
+            ->values();
+
+        $statusOptions = $reservations
+            ->pluck('status')
+            ->unique()
+            ->sort()
+            ->values();
+
+        $checkInDates = $reservations
+            ->pluck('check_in')
+            ->filter()
+            ->sort()
+            ->values();
+
+        $firstCheckInDate = $checkInDates->first() ?: now()->toDateString();
+        $lastCheckInDate = $checkInDates->last() ?: now()->toDateString();
+
+        return view('admin.admin_reports', [
+            'reservations' => $reservations,
+            'totalReservations' => $totalReservations,
+            'checkedInGuests' => $checkedInGuests,
+            'totalGuests' => $totalGuests,
+            'customerCount' => $customerCount,
+            'revenue' => $revenue,
+            'pendingReservations' => $pendingReservations,
+            'cancelledReservations' => $cancelledReservations,
+            'reservationTypeBreakdown' => $reservationTypeBreakdown,
+            'paymentStatusBreakdown' => $paymentStatusBreakdown,
+            'amenityBreakdown' => $amenityBreakdown,
+            'amenityOptions' => $amenityOptions,
+            'statusOptions' => $statusOptions,
+            'mostBookedAmenity' => $mostBookedAmenity,
+            'mostBookedAmenityCount' => $mostBookedAmenityCount,
+            'peakBookedDay' => $peakBookedDay,
+            'peakBookedDayCount' => $peakBookedDayCount,
+            'peakBookedMonth' => $peakBookedMonth,
+            'peakBookedMonthCount' => $peakBookedMonthCount,
+            'firstCheckInDate' => $firstCheckInDate,
+            'lastCheckInDate' => $lastCheckInDate,
+        ]);
+    })->name('reports');
 
     Route::get('/settings', function (Request $request) {
         $user = $request->session()->get('auth_user');
@@ -653,6 +843,65 @@ Route::prefix('staff')->name('staff.')->group(function () {
 
         return view('staff.staff_reservations', compact('reservations', 'reservationData'));
     })->name('reservations');
+
+    Route::get('/reports', function (Request $request) {
+        $user = $request->session()->get('auth_user');
+        if (! $user || $user['role'] !== 'staff') {
+            return redirect()->route('login');
+        }
+
+        $reservations = Reservation::query()
+            ->with(['reservationAmenities.amenity', 'reservationGuests.customer'])
+            ->orderByDesc('check_in')
+            ->get();
+
+        $reportRows = $reservations->map(function ($reservation) {
+            $customer = $reservation->reservationGuests->first()?->customer;
+            $customerName = $customer ? trim(($customer->first_name ?? '') . ' ' . ($customer->last_name ?? '')) : $reservation->booker_name;
+            $amenityNames = $reservation->reservationAmenities->pluck('amenity.amenities_name')->filter()->values();
+
+            return [
+                'id' => $reservation->id,
+                'customer_name' => $customerName ?: $reservation->booker_name,
+                'check_in' => $reservation->check_in,
+                'amenities' => $amenityNames->isEmpty() ? 'None' : $amenityNames->join(', '),
+                'status' => $reservation->status,
+                'payment_status' => $reservation->payment_status,
+                'total_amount' => $reservation->total_amount,
+            ];
+        });
+
+        $customerOptions = $reportRows->pluck('customer_name')->unique()->sort()->values();
+        $amenityOptions = $reportRows->flatMap(function ($row) {
+            return $row['amenities'] === 'None' ? [] : explode(', ', $row['amenities']);
+        })->unique()->sort()->values();
+        $statusOptions = $reportRows->pluck('status')->unique()->sort()->values();
+
+        $checkInDates = $reportRows->pluck('check_in')->filter();
+        $firstCheckInDate = $checkInDates->min() ?? now()->toDateString();
+        $lastCheckInDate = $checkInDates->max() ?? now()->toDateString();
+
+        $totalReservations = $reportRows->count();
+        $customerCount = $reportRows->pluck('customer_name')->unique()->count();
+        $amenityCount = $reportRows->flatMap(function ($row) {
+            return $row['amenities'] === 'None' ? [] : explode(', ', $row['amenities']);
+        })->unique()->count();
+
+        $totalRevenue = $reportRows->sum('total_amount');
+
+        return view('staff.staff_reports', compact(
+            'reportRows',
+            'customerOptions',
+            'amenityOptions',
+            'statusOptions',
+            'firstCheckInDate',
+            'lastCheckInDate',
+            'totalReservations',
+            'customerCount',
+            'amenityCount',
+            'totalRevenue'
+        ));
+    })->name('reports');
 
     Route::get('/check-ins', function (Request $request) {
         $user = $request->session()->get('auth_user');
