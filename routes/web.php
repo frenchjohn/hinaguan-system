@@ -34,7 +34,52 @@ Route::get('/api/active-guests-count', function () {
 })->name('api.active-guests-count');
 
 Route::get('/amenities', function () {
-    return view('amenities');
+    $amenities = Amenity::where('status', true)
+        ->orderBy('amenities_name')
+        ->get();
+
+    $availability = [];
+    $today = now()->startOfDay();
+
+    foreach ($amenities as $amenity) {
+        $slots = [];
+        $dateCursor = $today->copy();
+
+        for ($i = 0; $i < 30; $i++) {
+            $date = $dateCursor->toDateString();
+            $hasDaytime = ! Reservation::query()
+                ->whereDate('reservation_date', $date)
+                ->whereNotIn('status', ['Cancelled', 'Checked Out'])
+                ->whereHas('reservationAmenities', function ($query) use ($amenity): void {
+                    $query->where('amenity_id', $amenity->id)
+                        ->whereIn('pricing_type', ['Daytime', 'Daytime Aircon']);
+                })
+                ->exists();
+            $hasNighttime = ! Reservation::query()
+                ->whereDate('reservation_date', $date)
+                ->whereNotIn('status', ['Cancelled', 'Checked Out'])
+                ->whereHas('reservationAmenities', function ($query) use ($amenity): void {
+                    $query->where('amenity_id', $amenity->id)
+                        ->whereIn('pricing_type', ['Nighttime', 'Nighttime Aircon']);
+                })
+                ->exists();
+
+            $slots[] = [
+                'date' => $date,
+                'daytime' => $hasDaytime,
+                'nighttime' => $hasNighttime,
+            ];
+
+            $dateCursor->addDay();
+        }
+
+        $availability[$amenity->id] = $slots;
+    }
+
+    return view('amenities', [
+        'amenities' => $amenities,
+        'availability' => $availability,
+    ]);
 })->name('amenities');
 
 Route::get('/reservation/weather-preview', function (Request $request, WeatherService $weather) {
@@ -58,6 +103,87 @@ Route::get('/reservation/weather-preview', function (Request $request, WeatherSe
         'chance_of_rain' => $forecast['chance_of_rain'],
     ]);
 })->name('reservation.weather-preview');
+
+Route::get('/reservation/availability', function (Request $request) {
+    $date = $request->query('date');
+    $slot = $request->query('slot');
+
+    if (! $date || ! $slot) {
+        return response()->json([
+            'date' => $date,
+            'slot' => $slot,
+            'occupied_amenity_ids' => [],
+        ]);
+    }
+
+    $pricingTypes = $slot === 'Nighttime'
+        ? ['Nighttime', 'Nighttime Aircon']
+        : ['Daytime', 'Daytime Aircon'];
+
+    $occupiedAmenityIds = Reservation::query()
+        ->whereDate('reservation_date', $date)
+        ->whereNotIn('status', ['Cancelled'])
+        ->whereHas('reservationAmenities', function ($query) use ($pricingTypes): void {
+            $query->whereIn('pricing_type', $pricingTypes);
+        })
+        ->with('reservationAmenities')
+        ->get()
+        ->flatMap(fn (Reservation $reservation) => $reservation->reservationAmenities
+            ->pluck('amenity_id'))
+        ->unique()
+        ->values()
+        ->all();
+
+    return response()->json([
+        'date' => $date,
+        'slot' => $slot,
+        'occupied_amenity_ids' => $occupiedAmenityIds,
+    ]);
+})->name('reservation.availability');
+
+Route::get('/reservation/availability/calendar', function (Request $request) {
+    $amenityId = $request->query('amenity_id');
+    $slot = $request->query('slot', 'Daytime');
+
+    if (! $amenityId) {
+        return response()->json([
+            'amenity_id' => $amenityId,
+            'slot' => $slot,
+            'availability' => [],
+        ]);
+    }
+
+    $pricingTypes = $slot === 'Nighttime'
+        ? ['Nighttime', 'Nighttime Aircon']
+        : ['Daytime', 'Daytime Aircon'];
+
+    $today = now()->startOfDay();
+    $availability = [];
+
+    for ($i = 0; $i < 30; $i++) {
+        $date = $today->copy()->addDays($i)->toDateString();
+        $isBooked = Reservation::query()
+            ->whereDate('reservation_date', $date)
+            ->whereNotIn('status', ['Cancelled', 'Checked Out'])
+            ->whereHas('reservationAmenities', function ($query) use ($amenityId, $pricingTypes): void {
+                $query->where('amenity_id', $amenityId)
+                    ->whereIn('pricing_type', $pricingTypes);
+            })
+            ->exists();
+
+        $availability[] = [
+            'date' => $date,
+            'daytime' => $slot === 'Daytime' ? ! $isBooked : null,
+            'nighttime' => $slot === 'Nighttime' ? ! $isBooked : null,
+        ];
+    }
+
+    return response()->json([
+        'amenity_id' => $amenityId,
+        'slot' => $slot,
+        'availability' => $availability,
+    ]);
+})->name('reservation.availability.calendar');
 
 Route::get('/reservation', function (WeatherService $weather) {
     $amenities = Amenity::where('status', true)
@@ -103,16 +229,36 @@ Route::post('/reservation/prototype', function (Request $request) {
         'check_in' => ['nullable', 'date'],
         'reservation_date' => ['nullable', 'date'],
         'slot' => ['nullable', 'string'],
-        'amenities' => ['required', 'array', 'min:1'],
-        'amenities.*.amenity_id' => ['required', 'string'],
-        'amenities.*.pricing_type' => ['required', 'string'],
-        'amenities.*.price_at_booking' => ['required', 'numeric'],
+        'amenities' => ['nullable', 'array'],
+        'amenities.*.amenity_id' => ['required_with:amenities', 'string'],
+        'amenities.*.pricing_type' => ['required_with:amenities', 'string'],
+        'amenities.*.price_at_booking' => ['required_with:amenities', 'numeric'],
+        'amenity_id' => ['nullable', 'string'],
+        'pricing_type' => ['nullable', 'string'],
+        'price_at_booking' => ['nullable', 'numeric'],
     ]);
+
+    $amenities = is_array($data['amenities'] ?? null) && count($data['amenities']) > 0
+        ? $data['amenities']
+        : [[
+            'amenity_id' => $data['amenity_id'] ?? null,
+            'pricing_type' => $data['pricing_type'] ?? ($data['slot'] ?? 'Daytime'),
+            'price_at_booking' => $data['price_at_booking'] ?? 0,
+        ]];
+
+    $amenities = array_values(array_filter($amenities, fn ($amenity) => ! empty($amenity['amenity_id'])));
+
+    if ($amenities === []) {
+        return response()->json([
+            'success' => false,
+            'message' => 'At least one amenity is required.',
+        ], 422);
+    }
 
     $reservationDate = $data['reservation_date'] ?? $data['check_in'] ?? null;
 
     // Calculate total from all amenities
-    $totalAmount = array_sum(array_column($data['amenities'], 'price_at_booking'));
+    $totalAmount = array_sum(array_column($amenities, 'price_at_booking'));
 
     $reservation = Reservation::create([
         'booker_name' => $data['booker_name'],
@@ -131,7 +277,7 @@ Route::post('/reservation/prototype', function (Request $request) {
     // Don't create customer yet - only create when staff checks in and fills the check-in modal
 
     // Create a ReservationAmenity record for each amenity
-    foreach ($data['amenities'] as $amenity) {
+    foreach ($amenities as $amenity) {
         ReservationAmenity::create([
             'reservation_id' => $reservation->id,
             'amenity_id' => $amenity['amenity_id'],

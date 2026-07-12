@@ -14,15 +14,15 @@
         <section class="rp-filterbar">
             <div class="rp-filterbar__copy">
                 <span class="rp-label">Reservations</span>
-                <h1 class="rp-title">Choose a date and filter amenities</h1>
-                <p class="rp-desc">View image cards, then tap any amenity to see details in a modal.</p>
+                <h1 class="rp-title">Choose amenities or dates first</h1>
+                <p class="rp-desc">Pick an amenity to view its calendar first, or use the date picker later when you are ready.</p>
             </div>
             <div class="rp-filterbar__controls">
                 <div class="rp-date-card">
                     <span class="rp-date-card__label">Reservation date</span>
                     <div class="rp-date-card__picker">
-                        <input id="reservation_date" name="reservation_date" type="date" min="{{ now()->toDateString() }}" value="{{ now()->toDateString() }}" data-min-date="{{ now()->toDateString() }}">
-                        <span id="reservationDay" class="rp-date-card__day">{{ now()->format('l') }}</span>
+                        <input id="reservation_date" name="reservation_date" type="date" min="{{ now()->toDateString() }}" value="" data-min-date="{{ now()->toDateString() }}" placeholder="Pick a date">
+                        <span id="reservationDay" class="rp-date-card__day">Select date</span>
                     </div>
                     <div class="rp-date-card__weather" id="reservationWeatherPreview">
                         @if($weatherPreview)
@@ -78,7 +78,11 @@
             </label>
         </section>
 
-        <section class="rp-grid">
+        <section class="rp-grid" id="reservationGridShell">
+            <div class="rp-grid__loading" id="availabilityLoading" hidden>
+                <div class="rp-grid__loading-spinner" aria-hidden="true"></div>
+                <p>Loading amenities for this date and slot…</p>
+            </div>
             @if($amenities->isEmpty())
                 <div class="rp-empty">
                     <p>No amenities are available right now. Please check back later.</p>
@@ -200,6 +204,27 @@
                             <p class="rp-booking-form__message" id="bookingNotice"></p>
                         </form>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rp-modal" id="availabilityModal" aria-hidden="true">
+            <div class="rp-modal__backdrop" data-close-availability-modal></div>
+            <div class="rp-modal__panel rp-modal__panel--compact">
+                <div class="rp-modal__header">
+                    <div>
+                        <p class="rp-modal__eyebrow">Availability calendar</p>
+                        <h2 id="availabilityModalTitle">Amenity name</h2>
+                    </div>
+                    <button type="button" class="rp-modal__close" data-close-availability-modal>&times;</button>
+                </div>
+                <div class="rp-modal__content rp-modal__content--stacked">
+                    <div class="rp-modal__slot-toggle" role="tablist" aria-label="Booking slot">
+                        <button type="button" class="rp-slot-btn is-active" data-slot-toggle="Daytime">Daytime</button>
+                        <button type="button" class="rp-slot-btn" data-slot-toggle="Nighttime">Nighttime</button>
+                    </div>
+                    <div class="rp-calendar" id="availabilityCalendar"></div>
+                    <p class="rp-modal__hint">Available dates are clickable. Unavailable dates are disabled.</p>
                 </div>
             </div>
         </div>

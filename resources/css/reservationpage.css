@@ -255,6 +255,40 @@
 
 .rp-grid {
     width: 100%;
+    position: relative;
+}
+
+.rp-grid__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    min-height: 12rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 1.25rem;
+    background: #f8fafc;
+    color: #475569;
+    margin-bottom: 1rem;
+}
+
+.rp-grid__loading[hidden] {
+    display: none;
+}
+
+.rp-grid__loading-spinner {
+    width: 1.1rem;
+    height: 1.1rem;
+    border: 3px solid #cbd5e1;
+    border-top-color: #1d4ed8;
+    border-radius: 50%;
+    animation: rp-spin 0.9s linear infinite;
+}
+
+.rp-grid.is-busy .rp-grid__list,
+.rp-grid.is-busy .rp-empty {
+    opacity: 0.6;
+    pointer-events: none;
 }
 
 .rp-grid__list {
@@ -329,6 +363,47 @@
     box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15), 0 18px 40px rgba(15, 23, 42, 0.12);
 }
 
+.rp-card.is-disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.rp-card.is-booked {
+    border-color: #f59e0b;
+    box-shadow: 0 12px 30px rgba(245, 158, 11, 0.16);
+    background: #fff7ed;
+}
+
+.rp-card.is-highlighted {
+    border-color: #1d4ed8;
+    box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.18), 0 18px 40px rgba(15, 23, 42, 0.12);
+    transform: translateY(-2px);
+}
+
+.rp-card.is-booked .rp-card__button {
+    cursor: not-allowed;
+}
+
+.rp-card__overlay.is-booked {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.1) 20%, rgba(120, 53, 15, 0.9) 100%);
+}
+
+.rp-card__overlay.is-booked span {
+    font-size: 0.95rem;
+}
+
+.rp-card__overlay.is-booked::after {
+    content: 'Booked';
+    display: inline-flex;
+    margin-left: auto;
+    padding: 0.3rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    font-size: 0.8rem;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+}
+
 .rp-card__overlay.is-selected {
     background: linear-gradient(180deg, rgba(15, 23, 42, 0.1) 15%, rgba(29, 78, 216, 0.92) 100%);
 }
@@ -343,6 +418,56 @@
     font-size: 0.8rem;
     font-weight: 700;
     backdrop-filter: blur(4px);
+}
+
+.rp-modal__slot-toggle {
+    display: inline-flex;
+    gap: 0.5rem;
+    padding: 0.25rem;
+    border-radius: 999px;
+    background: #f7f5f0;
+    width: fit-content;
+}
+
+.rp-modal__hint {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.rp-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.55rem;
+}
+
+.rp-calendar__day {
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #0f172a;
+    padding: 0.7rem 0.3rem;
+    border-radius: 0.85rem;
+    min-height: 3.2rem;
+    display: grid;
+    place-items: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.rp-calendar__day.is-available {
+    cursor: pointer;
+    background: rgba(29, 78, 216, 0.08);
+    color: #1d4ed8;
+}
+
+.rp-calendar__day.is-available:hover {
+    background: rgba(29, 78, 216, 0.16);
+}
+
+.rp-calendar__day.is-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #f8fafc;
 }
 
 .rp-floating-actions {
@@ -758,6 +883,12 @@
     color: #475569;
     font-size: 0.9rem;
     line-height: 1.5;
+}
+
+@keyframes rp-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @media (max-width: 980px) {

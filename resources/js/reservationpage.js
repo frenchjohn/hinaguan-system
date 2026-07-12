@@ -41,6 +41,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const reservationDay = document.getElementById('reservationDay');
     const weatherPreview = document.getElementById('reservationWeatherPreview');
     const slotButtons = document.querySelectorAll('[data-slot]');
+    const availabilityModal = document.getElementById('availabilityModal');
+    const availabilityCalendar = document.getElementById('availabilityCalendar');
+    const availabilityModalTitle = document.getElementById('availabilityModalTitle');
+    const availabilitySlotButtons = document.querySelectorAll('[data-slot-toggle]');
+    const availabilityCloseButtons = document.querySelectorAll('[data-close-availability-modal]');
+    const urlParams = new URLSearchParams(window.location.search);
+    const preselectedAmenityId = urlParams.get('amenity');
+    const preselectedDate = urlParams.get('date');
+    const availabilityLoading = document.getElementById('availabilityLoading');
 
     if (!grid || cards.length === 0) {
         return;
@@ -52,17 +61,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let multiSelectionEnabled = false;
     let selectedCards = [];
     let multiSelectionChoices = {};
-
-    const availabilityMap = {
-        '2026-07-02': {
-            Daytime: ['amenity-1'],
-            Nighttime: ['amenity-2']
-        },
-        '2026-07-03': {
-            Daytime: ['amenity-2'],
-            Nighttime: []
-        }
-    };
+    let occupiedAmenityIds = [];
+    let isLoadingAvailability = false;
+    let availabilityRequestId = 0;
+    let calendarAmenityId = null;
+    let calendarAmenityName = '';
+    let calendarAvailability = [];
+    let calendarSlot = 'Daytime';
+    let calendarSourceCard = null;
 
     const getWeekday = (dateString) => {
         const date = new Date(dateString);
@@ -136,23 +142,169 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const setAvailabilityLoading = (loading) => {
+        isLoadingAvailability = loading;
+        if (grid) {
+            grid.classList.toggle('is-busy', loading);
+        }
+
+        if (availabilityLoading) {
+            availabilityLoading.hidden = !loading;
+        }
+
+        cards.forEach(card => {
+            card.classList.toggle('is-disabled', loading);
+        });
+
+        slotButtons.forEach(button => {
+            button.disabled = loading;
+        });
+    };
+
     const syncReservationDate = () => {
         if (!dateInput) return;
 
         const minDate = dateInput.dataset.minDate;
 
-        if (minDate && dateInput.value < minDate) {
+        if (minDate && dateInput.value && dateInput.value < minDate) {
             dateInput.value = minDate;
         }
 
         updateReservationDay();
-        applyFilters();
+        refreshAvailability();
         loadWeatherPreview(dateInput.value);
     };
 
+    const refreshAvailability = async () => {
+        if (!dateInput || !dateInput.value || !selectedSlot) {
+            occupiedAmenityIds = [];
+            applyFilters();
+            return;
+        }
+
+        const requestId = ++availabilityRequestId;
+        setAvailabilityLoading(true);
+        cards.forEach(card => {
+            card.style.display = 'none';
+        });
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
+
+        try {
+            const url = new URL('/reservation/availability', window.location.origin);
+            url.searchParams.set('date', dateInput.value);
+            url.searchParams.set('slot', selectedSlot);
+
+            const response = await fetch(url.toString(), {
+                headers: { Accept: 'application/json' },
+            });
+
+            if (!response.ok) {
+                throw new Error('Availability request failed');
+            }
+
+            const payload = await response.json();
+            if (requestId === availabilityRequestId) {
+                occupiedAmenityIds = payload.occupied_amenity_ids || [];
+            }
+        } catch (error) {
+            if (requestId === availabilityRequestId) {
+                occupiedAmenityIds = [];
+            }
+        }
+
+        if (requestId === availabilityRequestId) {
+            applyFilters();
+            setAvailabilityLoading(false);
+        }
+    };
+
+    const openAvailabilityModal = async (card) => {
+        if (!availabilityModal || !card) return;
+        calendarSourceCard = card;
+        calendarAmenityId = card.dataset.amenityId;
+        calendarAmenityName = card.dataset.name || 'Amenity';
+        availabilityModalTitle.textContent = `${calendarAmenityName} availability`;
+        calendarSlot = 'Daytime';
+        availabilitySlotButtons.forEach(button => {
+            button.classList.toggle('is-active', button.dataset.slotToggle === calendarSlot);
+        });
+        calendarAvailability = [];
+        renderAvailabilityCalendar();
+        availabilityModal.classList.add('is-open');
+        availabilityModal.setAttribute('aria-hidden', 'false');
+
+        try {
+            const url = new URL('/reservation/availability/calendar', window.location.origin);
+            url.searchParams.set('amenity_id', calendarAmenityId);
+            url.searchParams.set('slot', calendarSlot);
+
+            const response = await fetch(url.toString(), {
+                headers: { Accept: 'application/json' },
+            });
+
+            if (!response.ok) {
+                throw new Error('Calendar availability request failed');
+            }
+
+            const payload = await response.json();
+            calendarAvailability = payload.availability || [];
+            renderAvailabilityCalendar();
+        } catch (error) {
+            calendarAvailability = [];
+            renderAvailabilityCalendar();
+        }
+    };
+
+    const closeAvailabilityModal = () => {
+        if (!availabilityModal) return;
+        availabilityModal.classList.remove('is-open');
+        availabilityModal.setAttribute('aria-hidden', 'true');
+    };
+
+    const renderAvailabilityCalendar = () => {
+        if (!availabilityCalendar || !calendarAmenityId) return;
+
+        availabilityCalendar.innerHTML = '';
+        const days = Array.from({ length: 30 }, (_, index) => {
+            const date = new Date();
+            date.setDate(date.getDate() + index);
+            const isoDate = date.toISOString().slice(0, 10);
+            const isAvailable = calendarAvailability.some(entry => entry.date === isoDate && entry[calendarSlot.toLowerCase()] === true);
+            const dayButton = document.createElement('button');
+            dayButton.type = 'button';
+            dayButton.className = `rp-calendar__day ${isAvailable ? 'is-available' : 'is-disabled'}`;
+            dayButton.textContent = date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+            dayButton.disabled = !isAvailable;
+            dayButton.addEventListener('click', () => {
+                if (!isAvailable) return;
+                if (dateInput) {
+                    dateInput.value = isoDate;
+                }
+                updateReservationDay();
+                closeAvailabilityModal();
+                refreshAvailability();
+                
+                // Automatically open the booking modal for this amenity after date is selected
+                if (calendarSourceCard) {
+                    setTimeout(() => {
+                        openModal(calendarSourceCard);
+                    }, 300);
+                }
+            });
+            return dayButton;
+        });
+
+        days.forEach(day => availabilityCalendar.appendChild(day));
+    };
+
     const isAvailableForSlot = (card, dateString, slot) => {
-        const occupiedIds = availabilityMap[dateString]?.[slot] || [];
-        return !occupiedIds.includes(card.dataset.amenityId);
+        if (!dateString || !slot) {
+            return true;
+        }
+
+        return !occupiedAmenityIds.includes(card.dataset.amenityId);
     };
 
     const applyFilters = () => {
@@ -179,8 +331,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 filterMatch = validMin && validMax;
             }
 
-            const visible = slotMatch && filterMatch;
+            const visible = filterMatch;
+            const isBooked = !slotMatch;
             card.style.display = visible ? '' : 'none';
+            card.classList.toggle('is-booked', visible && isBooked);
+            const overlay = card.querySelector('.rp-card__overlay');
+            if (overlay) {
+                overlay.classList.toggle('is-booked', visible && isBooked);
+                overlay.querySelector('span') && (overlay.querySelector('span').textContent = visible && isBooked ? `${card.dataset.name} — Already booked` : card.dataset.name);
+            }
             if (visible) {
                 visibleCount += 1;
             }
@@ -200,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
         slotButtons.forEach(button => {
             button.classList.toggle('is-active', button.dataset.slot === slot);
         });
-        applyFilters();
+        refreshAvailability();
     };
 
     const updateRangeInputs = () => {
@@ -492,13 +651,27 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (dateInput) {
+        if (preselectedDate) {
+            dateInput.value = preselectedDate;
+            updateReservationDay();
+            refreshAvailability();
+            loadWeatherPreview(dateInput.value);
+        }
         dateInput.addEventListener('change', syncReservationDate);
         dateInput.addEventListener('input', syncReservationDate);
     }
 
     updateReservationDay();
     applyFilters();
-    syncReservationDate();
+
+    if (preselectedAmenityId) {
+        const preselectedCard = cards.find(card => card.dataset.amenityId === preselectedAmenityId);
+        if (preselectedCard) {
+            preselectedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            preselectedCard.classList.add('is-highlighted');
+            setTimeout(() => preselectedCard.classList.remove('is-highlighted'), 2200);
+        }
+    }
 
     slotButtons.forEach(button => {
         button.addEventListener('click', () => setActiveSlot(button.dataset.slot));
@@ -528,17 +701,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('[data-open-modal]').forEach(button => {
         button.addEventListener('click', () => {
+            if (isLoadingAvailability) {
+                return;
+            }
+
             const card = button.closest('.rp-card');
+            if (!card) {
+                return;
+            }
+
             if (multiSelectionEnabled) {
                 toggleCardSelection(card);
                 return;
             }
+
+            if (card.classList.contains('is-booked')) {
+                return;
+            }
+
+            // If no date selected yet, open the calendar modal first
+            if (!dateInput || !dateInput.value) {
+                openAvailabilityModal(card);
+                return;
+            }
+
+            // Date is already selected, open the booking details modal
             openModal(card);
         });
     });
 
     if (selectionCheckoutBtn) {
         selectionCheckoutBtn.addEventListener('click', () => {
+            if (multiSelectionEnabled && selectedCards.length > 0) {
+                const targetCard = selectedCards[0];
+                if (targetCard) {
+                    openAvailabilityModal(targetCard);
+                    return;
+                }
+            }
+
             openSelectionSheet();
         });
     }
@@ -705,6 +906,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
     selectionCloseButtons.forEach(button => {
         button.addEventListener('click', closeSelectionSheet);
+    });
+
+    availabilityCloseButtons.forEach(button => {
+        button.addEventListener('click', closeAvailabilityModal);
+    });
+
+    if (availabilityModal) {
+        availabilityModal.addEventListener('click', (event) => {
+            if (event.target === availabilityModal) {
+                closeAvailabilityModal();
+            }
+        });
+    }
+
+    availabilitySlotButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            calendarSlot = button.dataset.slotToggle;
+            availabilitySlotButtons.forEach(slotButton => {
+                slotButton.classList.toggle('is-active', slotButton.dataset.slotToggle === calendarSlot);
+            });
+            calendarAvailability = [];
+            renderAvailabilityCalendar();
+
+            try {
+                const url = new URL('/reservation/availability/calendar', window.location.origin);
+                url.searchParams.set('amenity_id', calendarAmenityId || '');
+                url.searchParams.set('slot', calendarSlot);
+
+                const response = await fetch(url.toString(), {
+                    headers: { Accept: 'application/json' },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Calendar availability request failed');
+                }
+
+                const payload = await response.json();
+                calendarAvailability = payload.availability || [];
+                renderAvailabilityCalendar();
+            } catch (error) {
+                calendarAvailability = [];
+                renderAvailabilityCalendar();
+            }
+        });
     });
 
     if (multiAirconModal) {
