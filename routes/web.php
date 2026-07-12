@@ -1597,15 +1597,19 @@ Route::prefix('staff')->name('staff.')->group(function () {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Check out all guests in this reservation
+        // Only check out guests who haven't been checked out yet
         ReservationGuest::where('reservation_id', $reservation->id)
+            ->whereNull('checked_out_at')
             ->update([
                 'checked_out_at' => now(),
             ]);
 
-        // Update reservation checkout date
+        // Update reservation checkout date to the latest guest checkout time
+        $latestCheckOut = ReservationGuest::where('reservation_id', $reservation->id)
+            ->max('checked_out_at');
+
         $reservation->update([
-            'check_out' => now()->toDateString(),
+            'check_out' => $latestCheckOut ? now()->toDateString() : null,
         ]);
 
         return response()->json([
