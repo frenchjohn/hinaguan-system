@@ -1,15 +1,3 @@
-:root {
-    --admin-bg: #f5f7f7;
-    --admin-surface: #ffffff;
-    --admin-text: #0f172a;
-    --admin-muted: #475569;
-    --admin-border: #d1d5db;
-    --admin-primary: #16a34a;
-    --admin-primary-soft: rgba(22, 163, 74, 0.12);
-    --admin-danger: #dc2626;
-    --admin-danger-soft: rgba(220, 38, 38, 0.12);
-}
-
 .amenities-head {
     display: flex;
     align-items: flex-start;
@@ -22,24 +10,24 @@
     margin: 0 0 0.75rem;
     display: inline-flex;
     padding: 0.45rem 0.95rem;
-    border-radius: 999px;
-    background: var(--admin-primary-soft);
-    color: var(--admin-primary);
+    border-radius:  999px;
+    background: rgba(200, 164, 93, 0.12);
+    color: var(--hp-gold-dark);
     font-size: 0.85rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
 }
 
 .amenities-head__title {
     margin: 0;
     font-size: 1.85rem;
-    color: var(--admin-text);
+    color: var(--hp-text);
 }
 
 .amenities-head__text {
     margin: 0.65rem 0 0;
-    color: var(--admin-muted);
+    color: var(--hp-text-muted);
     max-width: 38rem;
     line-height: 1.75;
 }
@@ -52,19 +40,25 @@
 }
 
 .alert--success {
-    background: rgba(16, 185, 129, 0.12);
-    color: #047857;
-    border: 1px solid rgba(16, 185, 129, 0.24);
+    background: rgba(200, 164, 93, 0.12);
+    color: var(--hp-gold-dark);
+    border: 1px solid var(--hp-gold);
 }
 
 .amenities-table-wrap {
-    background: var(--admin-surface);
-    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(13, 44, 29, 0.06);
     border-radius: 2rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     overflow: hidden;
     max-height: 360px;
     overflow-y: auto;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .amenities-table-wrap {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .amenities-table-toolbar {
@@ -73,8 +67,13 @@
     gap: 1rem;
     align-items: end;
     padding: 1.5rem 1.5rem 0.5rem;
-    border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
+    border-bottom: 1px solid rgba(13, 44, 29, 0.1);
+    background: var(--hp-cream);
+}
+
+[data-theme="dark"] .amenities-table-toolbar {
+    background: rgba(255, 255, 255, 0.08);
+    border-bottom-color: rgba(255, 255, 255, 0.2);
 }
 
 .amenities-table-toolbar__item {
@@ -83,7 +82,7 @@
 }
 
 .amenities-table-toolbar__item label {
-    color: #334155;
+    color: var(--hp-text-muted);
     font-weight: 700;
     font-size: 0.9rem;
 }
@@ -92,16 +91,23 @@
 .amenities-table-toolbar__item select {
     width: 100%;
     min-width: 0;
-    border: 1px solid #cbd5e1;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: 0.875rem;
     padding: 0.85rem 1rem;
     background: #ffffff;
-    color: #0f172a;
+    color: var(--hp-text);
     font-size: 0.95rem;
 }
 
+[data-theme="dark"] .amenities-table-toolbar__item input,
+[data-theme="dark"] .amenities-table-toolbar__item select {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
 .amenities-table-toolbar__item input::placeholder {
-    color: #94a3b8;
+    color: var(--hp-text-muted);
 }
 
 .amenities-table {
@@ -115,7 +121,7 @@
 }
 
 .amenity-row:hover {
-    background: #f0fdf4 !important;
+    background: var(--hp-cream) !important;
 }
 
 .td-truncate {
@@ -129,25 +135,38 @@
 .amenities-table td {
     padding: 1.15rem 1.3rem;
     text-align: left;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid rgba(13, 44, 29, 0.1);
+}
+
+[data-theme="dark"] .amenities-table th,
+[data-theme="dark"] .amenities-table td {
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .amenities-table thead {
-    background: #f8fafc;
+    background: var(--hp-cream);
+}
+
+[data-theme="dark"] .amenities-table thead {
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .amenities-table th {
-    color: #334155;
+    color: var(--hp-text-muted);
     font-size: 0.94rem;
     font-weight: 700;
 }
 
+[data-theme="dark"] .amenities-table th {
+    color: var(--hp-gold);
+}
+
 .amenities-table tbody tr:hover {
-    background: #f8fafc;
+    background: var(--hp-cream);
 }
 
 .amenities-table td {
-    color: #475569;
+    color: var(--hp-text);
     font-size: 0.95rem;
 }
 
@@ -190,14 +209,24 @@
 }
 
 .btn--primary {
-    background: linear-gradient(135deg, #16a34a, #22c55e);
+    background: var(--hp-green-dark);
     color: #fff;
 }
 
+.btn--primary:hover {
+    background: var(--hp-green-mid);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 44, 29, 0.3);
+}
+
 .btn--ghost {
-    background: rgba(15, 23, 42, 0.04);
-    color: #0f172a;
-    border-color: rgba(15, 23, 42, 0.08);
+    background: var(--hp-cream);
+    color: var(--hp-text);
+    border-color: rgba(13, 44, 29, 0.1);
+}
+
+.btn--ghost:hover {
+    background: rgba(13, 44, 29, 0.05);
 }
 
 .btn--danger {
@@ -213,7 +242,7 @@
 .table-empty {
     text-align: center;
     padding: 2rem 0;
-    color: #64748b;
+    color: var(--hp-text-muted);
 }
 
 .modal {
@@ -232,7 +261,7 @@
 .modal__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.45);
+    background: rgba(13, 44, 29, 0.5);
 }
 
 .modal__panel {
@@ -242,9 +271,15 @@
     padding: 1.75rem;
     border-radius: 2rem;
     background: #ffffff;
-    box-shadow: 0 34px 80px rgba(15, 23, 42, 0.16);
+    border: 1px solid rgba(13, 44, 29, 0.1);
+    box-shadow: 0 34px 80px rgba(13, 44, 29, 0.16);
     z-index: 1;
     overflow-y: auto;
+}
+
+[data-theme="dark"] .modal__panel {
+    background: #1a2e1e;
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 .modal__header {
@@ -258,13 +293,13 @@
 .modal__header h3 {
     margin: 0;
     font-size: 1.4rem;
-    color: #0f172a;
+    color: var(--hp-text);
 }
 
 .modal__close {
     border: none;
     background: transparent;
-    color: #475569;
+    color: var(--hp-text-muted);
     font-size: 1.75rem;
     line-height: 1;
     cursor: pointer;
@@ -316,32 +351,32 @@
     align-items: center;
     min-height: 11rem;
     padding: 1.25rem;
-    border: 2px dashed #cbd5e1;
+    border: 2px dashed rgba(13, 44, 29, 0.1);
     border-radius: 1rem;
-    background: #f8fafc;
-    color: #475569;
+    background: var(--hp-cream);
+    color: var(--hp-text);
     text-align: center;
     cursor: pointer;
 }
 
 .dropzone:hover {
-    background: #f1f5f9;
+    background: rgba(13, 44, 29, 0.05);
 }
 
 .dropzone.is-active {
-    border-color: #22c55e;
-    background: #ecfdf5;
+    border-color: var(--hp-green-dark);
+    background: rgba(13, 44, 29, 0.05);
 }
 
 .dropzone--disabled {
     cursor: not-allowed;
     opacity: 0.65;
-    border-color: #cbd5e1;
-    background: #f8fafc;
+    border-color: rgba(13, 44, 29, 0.1);
+    background: var(--hp-cream);
 }
 
 .dropzone--disabled .dropzone__text {
-    color: #94a3b8;
+    color: var(--hp-text-muted);
 }
 
 .dropzone__text {
@@ -353,8 +388,8 @@
     display: block;
     padding: 0.45rem 0.75rem;
     border-radius: 999px;
-    background: rgba(15, 23, 42, 0.06);
-    color: #0f172a;
+    background: rgba(13, 44, 29, 0.06);
+    color: var(--hp-text);
     font-size: 0.9rem;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -363,7 +398,7 @@
 }
 
 .modal-form__row label {
-    color: #334155;
+    color: var(--hp-text-muted);
     font-weight: 700;
 }
 
@@ -375,12 +410,20 @@
 .modal-form textarea,
 .modal-form select {
     width: 100%;
-    border: 1px solid #cbd5e1;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: 1rem;
-    background: #f8fafc;
+    background: var(--hp-cream);
     padding: 0.95rem 1rem;
     font-size: 0.95rem;
-    color: #0f172a;
+    color: var(--hp-text);
+}
+
+[data-theme="dark"] .modal-form input,
+[data-theme="dark"] .modal-form textarea,
+[data-theme="dark"] .modal-form select {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
 }
 
 .modal-form textarea {
@@ -411,14 +454,14 @@
 }
 
 .amenities-table-wrap::-webkit-scrollbar-track {
-    background: #f8fafc;
+    background: var(--hp-cream);
 }
 
 .amenities-table-wrap::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: rgba(13, 44, 29, 0.2);
     border-radius: 4px;
 }
 
 .amenities-table-wrap::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: rgba(13, 44, 29, 0.3);
 }

@@ -5,11 +5,17 @@
 }
 
 .admin-settings__card {
-    background: var(--dash-panel-bg, #ffffff);
-    border: 1px solid var(--dash-border-color, #e5e7eb);
+    background: #fff;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: 0.75rem;
     padding: 2rem;
     overflow: hidden;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .admin-settings__card {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .admin-settings__card-header {
@@ -18,13 +24,13 @@
     align-items: center;
     margin-bottom: 1rem;
     padding-bottom: 1rem;
-    border-bottom: 2px solid var(--dash-border-color, #e5e7eb);
+    border-bottom: 2px solid rgba(13, 44, 29, 0.1);
 }
 
 .admin-settings__card-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--dash-text-primary, #1f2937);
+    color: var(--hp-text);
     margin: 0;
 }
 
@@ -33,8 +39,8 @@
 }
 
 .admin-settings__email-display {
-    background-color: var(--dash-bg-secondary, #f9fafb);
-    border: 1px solid var(--dash-border-color, #e5e7eb);
+    background-color: var(--hp-cream);
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: 0.5rem;
     padding: 1rem;
 }
@@ -42,7 +48,7 @@
 .admin-settings__email-label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--dash-text-secondary, #4b5563);
+    color: var(--hp-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 0 0 0.5rem 0;
@@ -50,7 +56,7 @@
 
 .admin-settings__email-value {
     font-size: 1rem;
-    color: var(--dash-text-primary, #1f2937);
+    color: var(--hp-text);
     margin: 0;
     word-break: break-all;
 }
@@ -60,7 +66,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.625rem 1.25rem;
-    background-color: var(--dash-primary, #3b82f6);
+    background-color: var(--hp-green-dark);
     color: white;
     border: none;
     border-radius: 0.5rem;
@@ -72,9 +78,9 @@
 }
 
 .admin-settings__toggle-btn:hover {
-    background-color: var(--dash-primary-hover, #2563eb);
+    background-color: var(--hp-green-mid);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(13, 44, 29, 0.3);
 }
 
 .admin-settings__toggle-icon {
@@ -118,30 +124,41 @@
 .admin-settings__label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--dash-text-secondary, #4b5563);
+    color: var(--hp-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .admin-settings__input {
     padding: 0.75rem 1rem;
-    border: 1px solid var(--dash-border-color, #e5e7eb);
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: 0.5rem;
     font-size: 1rem;
     font-family: inherit;
     transition: all 0.2s ease;
+    background: #fff;
+}
+
+[data-theme="dark"] .admin-settings__input {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
 }
 
 .admin-settings__input:focus {
     outline: none;
-    border-color: var(--dash-primary, #3b82f6);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: var(--hp-green-dark);
+    box-shadow: 0 0 0 3px rgba(13, 44, 29, 0.1);
 }
 
 .admin-settings__input:disabled {
-    background-color: var(--dash-bg-secondary, #f9fafb);
+    background-color: var(--hp-cream);
     cursor: not-allowed;
     opacity: 0.6;
+}
+
+[data-theme="dark"] .admin-settings__input:disabled {
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .admin-settings__error {
@@ -154,11 +171,11 @@
 
 .admin-settings__info {
     padding: 0.75rem 1rem;
-    background-color: #f0fdf4;
-    border: 1px solid #86efac;
+    background-color: rgba(200, 164, 93, 0.12);
+    border: 1px solid var(--hp-gold);
     border-radius: 0.5rem;
     font-size: 0.875rem;
-    color: #166534;
+    color: var(--hp-gold-dark);
     margin: 0;
 }
 
@@ -174,24 +191,24 @@
 }
 
 .admin-settings__btn--primary {
-    background-color: var(--dash-primary, #3b82f6);
+    background-color: var(--hp-green-dark);
     color: white;
 }
 
 .admin-settings__btn--primary:hover:not(:disabled) {
-    background-color: var(--dash-primary-hover, #2563eb);
+    background-color: var(--hp-green-mid);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(13, 44, 29, 0.3);
 }
 
 .admin-settings__btn--secondary {
-    background-color: var(--dash-bg-secondary, #f3f4f6);
-    color: var(--dash-text-primary, #1f2937);
-    border: 1px solid var(--dash-border-color, #e5e7eb);
+    background-color: var(--hp-cream);
+    color: var(--hp-text);
+    border: 1px solid rgba(13, 44, 29, 0.1);
 }
 
 .admin-settings__btn--secondary:hover:not(:disabled) {
-    background-color: var(--dash-bg-tertiary, #e5e7eb);
+    background-color: rgba(13, 44, 29, 0.05);
 }
 
 .admin-settings__btn:disabled {
@@ -234,6 +251,10 @@
     animation: slideUp 0.3s ease;
 }
 
+[data-theme="dark"] .admin-settings__modal-content {
+    background-color: #1a2e1e;
+}
+
 @keyframes slideUp {
     from {
         transform: translateY(20px);
@@ -248,13 +269,13 @@
 .admin-settings__modal-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--dash-text-primary, #1f2937);
+    color: var(--hp-text);
     margin: 0 0 0.5rem 0;
 }
 
 .admin-settings__modal-text {
     font-size: 0.875rem;
-    color: var(--dash-text-secondary, #4b5563);
+    color: var(--hp-text-muted);
     margin: 0 0 1rem 0;
 }
 

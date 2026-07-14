@@ -6,6 +6,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateTo = document.getElementById('dateTo');
     const reservationsTable = document.getElementById('reservationsTable');
 
+    // Tab functionality
+    const tabButtons = document.querySelectorAll('.reports-tab');
+    const tabContents = document.querySelectorAll('.reports-tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.dataset.tab;
+
+            // Remove active class from all tabs
+            tabButtons.forEach(btn => btn.classList.remove('reports-tab--active'));
+            tabContents.forEach(content => content.classList.remove('reports-tab-content--active'));
+
+            // Add active class to clicked tab
+            button.classList.add('reports-tab--active');
+
+            // Show corresponding content
+            const targetContent = document.getElementById(`tab-${tabId}`);
+            if (targetContent) {
+                targetContent.classList.add('reports-tab-content--active');
+            }
+        });
+    });
+
     const matchesFilter = (row) => {
         const rowAmenity = row.dataset.amenity?.toLowerCase() || '';
         const rowStatus = row.dataset.status?.toLowerCase() || '';

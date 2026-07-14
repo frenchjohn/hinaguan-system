@@ -70,6 +70,14 @@
                     </div>
                 </section>
 
+                <section class="reports-tabs">
+                    <button class="reports-tab reports-tab--active" data-tab="overview">Overview</button>
+                    <button class="reports-tab" data-tab="amenities">Amenities</button>
+                    <button class="reports-tab" data-tab="breakdown">Breakdown</button>
+                    <button class="reports-tab" data-tab="ledger">Ledger</button>
+                    <button class="reports-tab" data-tab="revenue">Revenue</button>
+                </section>
+
                 <section class="reports-print-summary" id="reportsPrintSummary" aria-hidden="true">
                     <div class="reports-print-summary__row">
                         <strong>Amenity:</strong>
@@ -85,39 +93,41 @@
                     </div>
                 </section>
 
-                <div class="reports-metrics">
-                    <article class="reports-metric-card">
-                        <p class="reports-metric-card__label">Total Reservations</p>
-                        <p class="reports-metric-card__value">{{ $totalReservations }}</p>
-                    </article>
-                    <article class="reports-metric-card">
-                        <p class="reports-metric-card__label">Total guests</p>
-                        <p class="reports-metric-card__value">{{ $totalGuests }}</p>
-                    </article>
-                    <article class="reports-metric-card">
-                        <p class="reports-metric-card__label">Unique customers</p>
-                        <p class="reports-metric-card__value">{{ $customerCount }}</p>
-                    </article>
-                    <article class="reports-metric-card">
-                        <p class="reports-metric-card__label">Revenue collected</p>
-                        <p class="reports-metric-card__value">₱{{ number_format($revenue, 2) }}</p>
-                    </article>
-                    <article class="reports-metric-card">
-                        <p class="reports-metric-card__label">Checked-in guests</p>
-                        <p class="reports-metric-card__value">{{ $checkedInGuests }}</p>
-                    </article>
-                    <article class="reports-metric-card reports-metric-card--alert">
-                        <p class="reports-metric-card__label">Cancelled reservations</p>
-                        <p class="reports-metric-card__value">{{ $cancelledReservations }}</p>
-                    </article>
-                    <article class="reports-metric-card">
-                        <p class="reports-metric-card__label">Top amenity</p>
-                        <p class="reports-metric-card__value">{{ $mostBookedAmenity }}</p>
-                        <p class="reports-metric-card__label reports-metric-card__meta">{{ $mostBookedAmenityCount }} bookings</p>
-                    </article>
+                <div class="reports-tab-content reports-tab-content--active" id="tab-overview">
+                    <div class="reports-metrics">
+                        <article class="reports-metric-card">
+                            <p class="reports-metric-card__label">Total Reservations</p>
+                            <p class="reports-metric-card__value">{{ $totalReservations }}</p>
+                        </article>
+                        <article class="reports-metric-card">
+                            <p class="reports-metric-card__label">Total guests</p>
+                            <p class="reports-metric-card__value">{{ $totalGuests }}</p>
+                        </article>
+                        <article class="reports-metric-card">
+                            <p class="reports-metric-card__label">Unique customers</p>
+                            <p class="reports-metric-card__value">{{ $customerCount }}</p>
+                        </article>
+                        <article class="reports-metric-card">
+                            <p class="reports-metric-card__label">Revenue collected</p>
+                            <p class="reports-metric-card__value">₱{{ number_format($revenue, 2) }}</p>
+                        </article>
+                        <article class="reports-metric-card">
+                            <p class="reports-metric-card__label">Checked-in guests</p>
+                            <p class="reports-metric-card__value">{{ $checkedInGuests }}</p>
+                        </article>
+                        <article class="reports-metric-card reports-metric-card--alert">
+                            <p class="reports-metric-card__label">Cancelled reservations</p>
+                            <p class="reports-metric-card__value">{{ $cancelledReservations }}</p>
+                        </article>
+                        <article class="reports-metric-card">
+                            <p class="reports-metric-card__label">Top amenity</p>
+                            <p class="reports-metric-card__value">{{ $mostBookedAmenity }}</p>
+                            <p class="reports-metric-card__label reports-metric-card__meta">{{ $mostBookedAmenityCount }} bookings</p>
+                        </article>
+                    </div>
                 </div>
 
-                <div class="reports-panel-group">
+                <div class="reports-tab-content" id="tab-amenities">
                     <section class="reports-panel">
                         <div class="reports-panel__head">
                             <h3 class="reports-panel__title">Top 5 Most Reserved Amenities</h3>
@@ -149,124 +159,134 @@
                             @endif
                         </div>
                     </section>
+                </div>
 
-                    <section class="reports-panel reports-panel--summary">
-                        <div class="reports-panel__head">
-                            <h3 class="reports-panel__title">Reservation Breakdown</h3>
-                        </div>
-                        <div class="reports-panel__body reports-stats-list">
-                            @foreach($reservationTypeBreakdown as $item)
-                                <div class="reports-stats-item">
-                                    <span>{{ $item['type'] }}</span>
-                                    <strong>{{ $item['count'] }}</strong>
-                                </div>
-                            @endforeach
-                        </div>
-                        <div class="reports-panel__head reports-panel__head--secondary">
-                            <h3 class="reports-panel__title">Payment Status</h3>
-                        </div>
-                        <div class="reports-panel__body reports-stats-list">
-                            @foreach($paymentStatusBreakdown as $item)
-                                <div class="reports-stats-item">
-                                    <span>{{ $item['status'] }}</span>
-                                    <strong>{{ $item['count'] }}</strong>
-                                </div>
-                            @endforeach
-                        </div>
-                    </section>
-                    <section class="reports-panel reports-panel--summary">
-                        <div class="reports-panel__head">
-                            <h3 class="reports-panel__title">Booking peaks</h3>
-                        </div>
-                        <div class="reports-panel__body reports-stats-list">
-                            <div class="reports-stats-item">
-                                <span>Peak booking day</span>
-                                <strong>
-                                    @if($peakBookedDay)
-                                        {{ \Illuminate\Support\Carbon::parse($peakBookedDay)->format('M d, Y') }}
-                                        ({{ $peakBookedDayCount }} bookings)
-                                    @else
-                                        No data
-                                    @endif
-                                </strong>
+                <div class="reports-tab-content" id="tab-breakdown">
+                    <div class="reports-panel-group">
+                        <section class="reports-panel reports-panel--summary">
+                            <div class="reports-panel__head">
+                                <h3 class="reports-panel__title">Reservation Breakdown</h3>
                             </div>
-                            <div class="reports-stats-item">
-                                <span>Peak booking month</span>
-                                <strong>
-                                    @if($peakBookedMonth)
-                                        {{ $peakBookedMonth }}
-                                        ({{ $peakBookedMonthCount }} bookings)
-                                    @else
-                                        No data
-                                    @endif
-                                </strong>
+                            <div class="reports-panel__body reports-stats-list">
+                                @foreach($reservationTypeBreakdown as $item)
+                                    <div class="reports-stats-item">
+                                        <span>{{ $item['type'] }}</span>
+                                        <strong>{{ $item['count'] }}</strong>
+                                    </div>
+                                @endforeach
                             </div>
+                        </section>
+                        <section class="reports-panel reports-panel--summary">
+                            <div class="reports-panel__head">
+                                <h3 class="reports-panel__title">Payment Status</h3>
+                            </div>
+                            <div class="reports-panel__body reports-stats-list">
+                                @foreach($paymentStatusBreakdown as $item)
+                                    <div class="reports-stats-item">
+                                        <span>{{ $item['status'] }}</span>
+                                        <strong>{{ $item['count'] }}</strong>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </section>
+                        <section class="reports-panel reports-panel--summary">
+                            <div class="reports-panel__head">
+                                <h3 class="reports-panel__title">Booking peaks</h3>
+                            </div>
+                            <div class="reports-panel__body reports-stats-list">
+                                <div class="reports-stats-item">
+                                    <span>Peak booking day</span>
+                                    <strong>
+                                        @if($peakBookedDay)
+                                            {{ \Illuminate\Support\Carbon::parse($peakBookedDay)->format('M d, Y') }}
+                                            ({{ $peakBookedDayCount }} bookings)
+                                        @else
+                                            No data
+                                        @endif
+                                    </strong>
+                                </div>
+                                <div class="reports-stats-item">
+                                    <span>Peak booking month</span>
+                                    <strong>
+                                        @if($peakBookedMonth)
+                                            {{ $peakBookedMonth }}
+                                            ({{ $peakBookedMonthCount }} bookings)
+                                        @else
+                                            No data
+                                        @endif
+                                    </strong>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <div class="reports-tab-content" id="tab-ledger">
+                    <section class="reports-panel reports-panel--wide">
+                        <div class="reports-panel__head">
+                            <h3 class="reports-panel__title">Reservation Ledger</h3>
+                            <span class="reports-panel__meta">Filtered result set</span>
+                        </div>
+                        <div class="reports-table-wrap">
+                            <table class="reports-table" id="reservationsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Booker</th>
+                                        <th>Check-in</th>
+                                        <th>Guests</th>
+                                        <th>Amenities</th>
+                                        <th>Status</th>
+                                        <th>Payment</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($reservations as $reservation)
+                                        <tr data-amenity="{{ $reservation->reservationAmenities->pluck('amenity.amenities_name')->filter()->join(', ') }}" data-status="{{ $reservation->status }}" data-checkin="{{ $reservation->reservation_date }}">
+                                            <td>{{ $reservation->booker_name }}</td>
+                                            <td>{{ $reservation->reservation_date ? \Illuminate\Support\Carbon::parse($reservation->reservation_date)->format('M d, Y') : 'TBD' }}</td>
+                                            <td>{{ $reservation->number_of_guests }}</td>
+                                            <td>{{ $reservation->reservationAmenities->pluck('amenity.amenities_name')->filter()->join(', ') ?: 'None' }}</td>
+                                            <td>
+                                                <span class="badge badge--{{ strtolower(str_replace(' ', '-', $reservation->status)) }}">{{ $reservation->status }}</span>
+                                            </td>
+                                            <td>{{ $reservation->payment_status }}</td>
+                                            <td>₱{{ number_format($reservation->total_amount, 2) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="7" class="reports-table-empty">No reservations available.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
                     </section>
                 </div>
 
-                <section class="reports-panel reports-panel--wide">
-                    <div class="reports-panel__head">
-                        <h3 class="reports-panel__title">Reservation Ledger</h3>
-                        <span class="reports-panel__meta">Filtered result set</span>
-                    </div>
-                    <div class="reports-table-wrap">
-                        <table class="reports-table" id="reservationsTable">
-                            <thead>
-                                <tr>
-                                    <th>Booker</th>
-                                    <th>Check-in</th>
-                                    <th>Guests</th>
-                                    <th>Amenities</th>
-                                    <th>Status</th>
-                                    <th>Payment</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($reservations as $reservation)
-                                    <tr data-amenity="{{ $reservation->reservationAmenities->pluck('amenity.amenities_name')->filter()->join(', ') }}" data-status="{{ $reservation->status }}" data-checkin="{{ $reservation->reservation_date }}">
-                                        <td>{{ $reservation->booker_name }}</td>
-                                        <td>{{ $reservation->reservation_date ? \Illuminate\Support\Carbon::parse($reservation->reservation_date)->format('M d, Y') : 'TBD' }}</td>
-                                        <td>{{ $reservation->number_of_guests }}</td>
-                                        <td>{{ $reservation->reservationAmenities->pluck('amenity.amenities_name')->filter()->join(', ') ?: 'None' }}</td>
-                                        <td>
-                                            <span class="badge badge--{{ strtolower(str_replace(' ', '-', $reservation->status)) }}">{{ $reservation->status }}</span>
-                                        </td>
-                                        <td>{{ $reservation->payment_status }}</td>
-                                        <td>₱{{ number_format($reservation->total_amount, 2) }}</td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="7" class="reports-table-empty">No reservations available.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <section class="reports-panel">
-                    <div class="reports-panel__head">
-                        <h3 class="reports-panel__title">Revenue Summary</h3>
-                    </div>
-                    <div class="reports-panel__body">
-                        <div class="reports-summary-grid">
-                            <div>
-                                <p>Total revenue collected</p>
-                                <strong>₱{{ number_format($revenue, 2) }}</strong>
-                            </div>
-                            <div>
-                                <p>Pending reservations</p>
-                                <strong>{{ $pendingReservations }}</strong>
-                            </div>
-                            <div>
-                                <p>Cancelled reservations</p>
-                                <strong>{{ $cancelledReservations }}</strong>
+                <div class="reports-tab-content" id="tab-revenue">
+                    <section class="reports-panel">
+                        <div class="reports-panel__head">
+                            <h3 class="reports-panel__title">Revenue Summary</h3>
+                        </div>
+                        <div class="reports-panel__body">
+                            <div class="reports-summary-grid">
+                                <div>
+                                    <p>Total revenue collected</p>
+                                    <strong>₱{{ number_format($revenue, 2) }}</strong>
+                                </div>
+                                <div>
+                                    <p>Pending reservations</p>
+                                    <strong>{{ $pendingReservations }}</strong>
+                                </div>
+                                <div>
+                                    <p>Cancelled reservations</p>
+                                    <strong>{{ $cancelledReservations }}</strong>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+                </div>
             </main>
         </div>
     </div>
