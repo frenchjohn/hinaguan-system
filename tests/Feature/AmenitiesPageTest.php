@@ -31,6 +31,7 @@ class AmenitiesPageTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Picnic Area');
-        $response->assertSee('Available now');
+        $response->assertSee('Amenity details');
+        $response->assertSee('data-open-info-modal');
     }
 }
