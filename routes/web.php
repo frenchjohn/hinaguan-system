@@ -1067,9 +1067,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
             ->whereNull('check_out')
             ->with(['reservationGuests' => function ($query) {
                 $query->with('customer');
-            }, 'reservationAmenities' => function ($query) {
-                $query->with('amenity');
-            }])
+            }, 'reservationAmenities.amenity'])
             ->orderBy('check_in', 'desc')
             ->get();
 
@@ -1082,6 +1080,9 @@ Route::prefix('staff')->name('staff.')->group(function () {
         }
 
         $reservationData = $activeReservations->mapWithKeys(function ($reservation) {
+            $primaryGuest = $reservation->reservationGuests->firstWhere('is_primary_guest', true);
+            $primaryCustomer = $primaryGuest?->customer;
+
             return [$reservation->id => [
                 'id' => $reservation->id,
                 'booker_name' => $reservation->booker_name,
@@ -1095,6 +1096,8 @@ Route::prefix('staff')->name('staff.')->group(function () {
                 'amount_paid' => $reservation->amount_paid,
                 'remaining_balance' => $reservation->remaining_balance,
                 'payment_status' => $reservation->payment_status,
+                'phone' => $primaryCustomer?->phone ?? $reservation->phone,
+                'email' => $primaryCustomer?->email ?? $reservation->email,
                 'reservation_guests' => $reservation->reservationGuests->map(function ($guestEntry) {
                     $customer = $guestEntry->customer;
                     return [
@@ -1116,10 +1119,11 @@ Route::prefix('staff')->name('staff.')->group(function () {
                 })->values(),
                 'reservation_amenities' => $reservation->reservationAmenities->map(function ($amenity) {
                     return [
-                        'amenity_name' => $amenity->amenity?->amenities_name,
+                        'amenity_name' => $amenity->amenity?->amenities_name ?? ($amenity->amenity_id ?? 'Unknown'),
                         'pricing_type' => $amenity->pricing_type,
-                        'price' => $amenity->price_at_booking,
-                        'quantity' => $amenity->quantity,
+                        'price' => $amenity->price_at_booking ?? 0,
+                        'quantity' => $amenity->quantity ?? 1,
+                        'amenity_id' => $amenity->amenity_id,
                     ];
                 })->values(),
             ]];
@@ -1138,6 +1142,8 @@ Route::prefix('staff')->name('staff.')->group(function () {
                 'age' => $customer->age,
                 'gender' => $customer->gender,
                 'nationality' => $customer->nationality,
+                'phone' => $customer->phone,
+                'email' => $customer->email,
                 'reservation_guests' => $customer->reservationGuests->map(function ($reservationGuest) {
                     return [
                         'id' => $reservationGuest->id,

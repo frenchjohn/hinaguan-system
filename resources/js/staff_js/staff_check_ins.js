@@ -19,19 +19,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const switchToGuest = () => {
         guestTableSection.style.display = '';
         reservationTableSection.style.display = 'none';
-        tabGuestBtn.style.backgroundColor = '#667eea';
+        tabGuestBtn.style.backgroundColor = 'var(--hp-green-dark)';
         tabGuestBtn.style.color = 'white';
-        tabReservationBtn.style.backgroundColor = '#e0e0e0';
-        tabReservationBtn.style.color = '#333';
+        tabGuestBtn.style.boxShadow = '0 4px 12px rgba(13, 44, 29, 0.3)';
+        tabGuestBtn.style.transform = 'translateY(-2px)';
+        tabReservationBtn.style.backgroundColor = 'var(--hp-cream)';
+        tabReservationBtn.style.color = 'var(--hp-text)';
+        tabReservationBtn.style.boxShadow = 'none';
+        tabReservationBtn.style.transform = 'none';
     };
 
     const switchToReservation = () => {
         guestTableSection.style.display = 'none';
         reservationTableSection.style.display = '';
-        tabGuestBtn.style.backgroundColor = '#e0e0e0';
-        tabGuestBtn.style.color = '#333';
-        tabReservationBtn.style.backgroundColor = '#667eea';
+        tabGuestBtn.style.backgroundColor = 'var(--hp-cream)';
+        tabGuestBtn.style.color = 'var(--hp-text)';
+        tabGuestBtn.style.boxShadow = 'none';
+        tabGuestBtn.style.transform = 'none';
+        tabReservationBtn.style.backgroundColor = 'var(--hp-green-dark)';
         tabReservationBtn.style.color = 'white';
+        tabReservationBtn.style.boxShadow = '0 4px 12px rgba(13, 44, 29, 0.3)';
+        tabReservationBtn.style.transform = 'translateY(-2px)';
     };
 
     tabGuestBtn?.addEventListener('click', switchToGuest);
@@ -76,20 +84,31 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
-        if (reservation.reservation_amenities.length > 0) {
-            html += `
-                <div style="margin-bottom: 1.5rem;">
-                    <h4 style="margin-bottom: 0.5rem; font-weight: 600;">Amenities</h4>
-                    <ul style="margin-left: 1.5rem; color: #666;">
-                        ${reservation.reservation_amenities.map(a => `
-                            <li>${a.amenity_name} (${a.pricing_type}) - ₱${parseFloat(a.price).toFixed(2)} x ${a.quantity}</li>
-                        `).join('')}
-                    </ul>
-                </div>
-            `;
+        if (reservation.reservation_amenities && reservation.reservation_amenities.length > 0) {
+            const validAmenities = reservation.reservation_amenities.filter(a => a.price > 0);
+            if (validAmenities.length > 0) {
+                html += `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="margin-bottom: 0.5rem; font-weight: 600;">Amenities</h4>
+                        <ul style="margin-left: 1.5rem; color: #666;">
+                            ${validAmenities.map(a => `
+                                <li>${a.amenity_name || a.amenity_id || 'Unknown'} (${a.pricing_type || 'N/A'}) - ₱${parseFloat(a.price).toFixed(2)} x ${a.quantity || 1}</li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
         }
 
         const totalAmount = reservation.reservation_amenities.reduce((sum, a) => sum + (parseFloat(a.price) * a.quantity), 0);
+
+        const mainGuestContact = primaryGuest?.customer ? {
+            phone: primaryGuest.customer.phone || reservation.phone || 'N/A',
+            email: primaryGuest.customer.email || reservation.email || 'N/A'
+        } : {
+            phone: reservation.phone || 'N/A',
+            email: reservation.email || 'N/A'
+        };
 
         html += `
             <div style="border-top: 1px solid #ddd; padding-top: 1rem;">
@@ -116,6 +135,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                     <span>Number of Guests:</span>
                     <strong>${reservation.number_of_guests || reservation.reservation_guests.length}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Contact (Phone):</span>
+                    <strong>${mainGuestContact.phone}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Contact (Email):</span>
+                    <strong>${mainGuestContact.email}</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                     <span>Total Amount:</span>

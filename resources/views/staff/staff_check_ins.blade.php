@@ -42,10 +42,15 @@
 							<p class="dash-panel__subtitle">Guests currently checked in or not yet checked out</p>
 						</div>
 						<div style="display: flex; gap: 0.5rem;">
-							<button type="button" class="guest-panel__button" id="tabGuestBtn" style="background-color: #667eea; color: white;">Guest</button>
-							<button type="button" class="guest-panel__button" id="tabReservationBtn" style="background-color: #e0e0e0; color: #333;">Reservation</button>
-							<a href="#" class="guest-panel__button" data-open-add-guest-modal="true">Add Guest</a>
-							<button type="button" class="guest-panel__button" id="scanQrBtn" style="background-color:#10b981; color:#fff;">Scan QR</button>
+							<button type="button" class="guest-panel__button" id="tabGuestBtn" style="background-color: var(--hp-green-dark); color: white; box-shadow: 0 4px 12px rgba(13, 44, 29, 0.3); transform: translateY(-2px);">Guest</button>
+							<button type="button" class="guest-panel__button" id="tabReservationBtn" style="background-color: var(--hp-cream); color: var(--hp-text);">Reservation</button>
+							<a href="#" class="guest-panel__button" data-open-add-guest-modal="true" style="background-color: var(--hp-gold); color: white;">Add Guest</a>
+							<button type="button" class="guest-panel__button" id="scanQrBtn" style="background-color: var(--hp-green-dark); color: white;">
+								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width: 1.25rem; height: 1.25rem;">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+									<path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+								</svg>
+							</button>
 						</div>
 					</div>
 
@@ -638,7 +643,6 @@
 						<div id="reservationModalBody" class="guest-modal__body"></div>
 						<div class="guest-form__actions" id="reservationModalActions">
 							<button type="button" class="guest-form__button--secondary" data-close-reservation-modal="true">Close</button>
-							<button type="button" class="guest-form__button" id="reservationCheckOutBtn">Check Out</button>
 						</div>
 					</div>
 				</div>
@@ -646,21 +650,22 @@
 				{{-- Scan QR Modal --}}
 				<div class="guest-modal guest-modal--add" id="scanQrModal" aria-hidden="true">
 					<div class="guest-modal__backdrop" data-close-scan-modal="true"></div>
-					<div class="guest-modal__content guest-modal__content--wide" role="dialog" aria-modal="true" aria-labelledby="scanQrModalTitle">
+					<div class="guest-modal__content guest-modal__content--wide" role="dialog" aria-modal="true" aria-labelledby="scanQrModalTitle" style="display: flex; flex-direction: row; background: var(--hp-cream);">
 						<button type="button" class="guest-modal__close" data-close-scan-modal="true" aria-label="Close QR scanner">&times;</button>
-						<h3 id="scanQrModalTitle" class="guest-modal__title">Scan Reservation QR</h3>
-						<div class="guest-form__section">
-							<div id="qrScanner" class="scan-modal__scanner"></div>
-							<p class="scan-modal__hint">Allow camera access and hold the reservation QR code in front of the lens.</p>
-							<label class="guest-form__field" style="margin-top:0.75rem;">
-								<span>Camera</span>
-								<select id="qrCameraSelect" style="width:100%; padding:0.75rem 0.85rem; border:1px solid #d1d5db; border-radius:0.75rem; background:#fff;"></select>
+						<div style="flex: 1; padding: 1.5rem; display: flex; flex-direction: column; justify-content: center;">
+							<h3 id="scanQrModalTitle" class="guest-modal__title" style="color: var(--hp-text); margin-bottom: 1.5rem;">Scan Reservation QR</h3>
+							<p class="scan-modal__hint" style="color: var(--hp-text); margin-bottom: 1.5rem; line-height: 1.6;">Allow camera access and hold the reservation QR code in front of the lens.</p>
+							<label class="guest-form__field" style="margin-bottom: 1rem;">
+								<span style="color: var(--hp-text); font-weight: 600; display: block; margin-bottom: 0.5rem;">Camera</span>
+								<select id="qrCameraSelect" style="width:100%; padding:0.75rem 0.85rem; border:1px solid var(--hp-green-dark); border-radius:0.75rem; background:#fff; color: #000;"></select>
 							</label>
-							<div class="scan-modal__status" id="qrScannerStatus">Ready to scan</div>
+							<div class="scan-modal__status" id="qrScannerStatus" style="color: var(--hp-text); margin-bottom: 1.5rem; font-weight: 500;">Ready to scan</div>
+							<div class="guest-form__actions" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: auto;">
+								<button type="button" class="guest-form__button" id="stopQrBtn" style="background-color: var(--hp-green-dark); color: white; border: none; padding: 0.75rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: 500;">Stop Scanner</button>
+							</div>
 						</div>
-						<div class="guest-form__actions" style="margin-top: 1rem;">
-							<button type="button" class="guest-form__secondary" data-close-scan-modal="true">Cancel</button>
-							<button type="button" class="guest-form__button" id="stopQrBtn">Stop Scanner</button>
+						<div style="flex: 1; padding: 1.5rem; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.05);">
+							<div id="qrScanner" class="scan-modal__scanner" style="width: 100%; max-width: 400px; height: 300px; background: #000; border-radius: 0.75rem; overflow: hidden;"></div>
 						</div>
 					</div>
 				</div>
