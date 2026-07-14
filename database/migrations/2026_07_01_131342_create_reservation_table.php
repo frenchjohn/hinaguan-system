@@ -21,8 +21,8 @@ return new class extends Migration
 
             // Reservation Details
             $table->date('reservation_date')->nullable();
-            $table->date('check_in')->nullable();
-            $table->date('check_out')->nullable();
+            $table->dateTime('check_in')->nullable();
+            $table->dateTime('check_out')->nullable();
             $table->unsignedInteger('number_of_guests');
             $table->enum('reservation_type', ['walk_in', 'online'])->default('online');
 

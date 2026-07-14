@@ -34,9 +34,9 @@ class Reservation extends Model
     ];
 
     protected $casts = [
-        'reservation_date' => 'date',
-        'check_in' => 'date',
-        'check_out' => 'date',
+        'reservation_date' => 'datetime',
+        'check_in' => 'datetime',
+        'check_out' => 'datetime',
         'total_amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
         'remaining_balance' => 'decimal:2',

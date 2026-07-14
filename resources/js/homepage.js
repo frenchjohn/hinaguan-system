@@ -1,14 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const header = document.querySelector('.hp-header');
+    const siteHeader = document.getElementById('hpSiteHeader');
+    const header = document.getElementById('hpHeader');
     const menuToggle = document.querySelector('.hp-menu-toggle');
     const mobileNav = document.querySelector('.hp-mobile-nav');
     const mobileLinks = mobileNav?.querySelectorAll('a');
     const guestCountEl = document.getElementById('activeGuestCount');
+    const scrollToTopBtn = document.getElementById('scrollToTop');
+    const navLinks = document.querySelectorAll('[data-nav-link]');
+    const sections = document.querySelectorAll('[data-section]');
+    const animatedElements = document.querySelectorAll('[data-animate]');
 
-    // Sticky header on scroll
+    const getScrollOffset = () => (siteHeader?.offsetHeight ?? 0) + 8;
+
+    const syncHeaderOffset = () => {
+        if (!siteHeader) return;
+        document.documentElement.style.setProperty('--hp-header-offset', `${siteHeader.offsetHeight}px`);
+    };
+
+    syncHeaderOffset();
+    window.addEventListener('resize', syncHeaderOffset, { passive: true });
+
+    // Sticky header background on scroll
     const onScroll = () => {
-        if (!header) return;
-        header.classList.toggle('is-scrolled', window.scrollY > 60);
+        const scrolled = window.scrollY > 40;
+        header?.classList.toggle('is-scrolled', scrolled);
+        scrollToTopBtn?.classList.toggle('is-visible', window.scrollY > 500);
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -32,23 +48,85 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+    navLinks.forEach((anchor) => {
         anchor.addEventListener('click', (e) => {
             const targetId = anchor.getAttribute('href');
-            if (!targetId || targetId === '#') return;
+            if (!targetId || !targetId.startsWith('#')) return;
 
             const target = document.querySelector(targetId);
             if (!target) return;
 
             e.preventDefault();
-            const headerHeight = header?.offsetHeight ?? 0;
-            const top = target.getBoundingClientRect().top + window.scrollY - headerHeight;
+            const top = target.getBoundingClientRect().top + window.scrollY - getScrollOffset();
 
             window.scrollTo({ top, behavior: 'smooth' });
             closeMobileNav();
         });
     });
 
+    // Scroll spy — active nav link
+    const setActiveNav = (sectionId) => {
+        navLinks.forEach((link) => {
+            const href = link.getAttribute('href');
+            const isActive = href === `#${sectionId}` || (sectionId === 'home' && href === '#home');
+            link.classList.toggle('is-active', isActive);
+        });
+    };
+
+    const sectionObserver = new IntersectionObserver(
+        (entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    setActiveNav(entry.target.id);
+                }
+            });
+        },
+        {
+            rootMargin: `-${getScrollOffset()}px 0px -55% 0px`,
+            threshold: 0,
+        }
+    );
+
+    sections.forEach((section) => sectionObserver.observe(section));
+
+    // Entrance animations on scroll
+    const animateObserver = new IntersectionObserver(
+        (entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+
+                const el = entry.target;
+                const delay = parseInt(el.dataset.delay ?? '0', 10);
+
+                window.setTimeout(() => {
+                    el.classList.add('is-visible');
+                }, delay);
+
+                animateObserver.unobserve(el);
+            });
+        },
+        {
+            rootMargin: '0px 0px -8% 0px',
+            threshold: 0.1,
+        }
+    );
+
+    animatedElements.forEach((el) => animateObserver.observe(el));
+
+    // Animate hero elements immediately on load
+    const heroElements = document.querySelectorAll('.hp-hero [data-animate]');
+    heroElements.forEach((el, index) => {
+        window.setTimeout(() => {
+            el.classList.add('is-visible');
+        }, 200 + index * 150);
+    });
+
+    // Scroll to top button
+    scrollToTopBtn?.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Active guest count polling
     const updateActiveGuestCount = async () => {
         if (!guestCountEl) return;
 

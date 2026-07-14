@@ -264,7 +264,7 @@ Route::post('/reservation/prototype', function (Request $request) {
         'booker_name' => $data['booker_name'],
         'phone' => $data['phone'],
         'email' => $data['email'],
-        'reservation_date' => $reservationDate,
+        'reservation_date' => $reservationDate ? now()->parse($reservationDate)->toDateTimeString() : null,
         'check_in' => null,
         'number_of_guests' => $data['number_of_guests'],
         'status' => 'Pending',
@@ -302,8 +302,10 @@ Route::post('/reservation/prototype', function (Request $request) {
 })->name('reservation.prototype')->withoutMiddleware([VerifyCsrfToken::class]);
 
 Route::get('/reservation/check-in/{reservation}', function (Reservation $reservation) {
-    $reservation->status = 'Checked In';
-    $reservation->save();
+    $reservation->update([
+        'status' => 'Checked In',
+        'check_in' => now()->toDateTimeString(),
+    ]);
 
     return response()->json([
         'success' => true,
@@ -1227,71 +1229,56 @@ Route::prefix('staff')->name('staff.')->group(function () {
         ]);
     })->name('checkins.lookup');
 
-    Route::get('/guests', function (Request $request) {
+    Route::get('/records', function (Request $request) {
         $user = $request->session()->get('auth_user');
         if (! $user || $user['role'] !== 'staff') {
             return redirect()->route('login');
         }
 
-        $customers = Customer::with(['reservationGuests' => function ($query) {
-            $query->with([
-                'reservation' => function ($reservationQuery) {
-                    $reservationQuery->with(['reservationAmenities' => function ($amenityQuery) {
-                        $amenityQuery->with('amenity');
-                    }, 'reservationGuests.customer']);
-                },
-                'customer',
-            ]);
+        // Get all checked-out reservation guests
+        $checkedOutGuests = ReservationGuest::with(['customer', 'reservation' => function ($query) {
+            $query->with(['reservationAmenities.amenity', 'reservationGuests.customer']);
         }])
-            ->orderBy('last_name')
-            ->orderBy('first_name')
+            ->whereNotNull('checked_out_at')
+            ->orderBy('checked_out_at', 'desc')
+            ->get();
+
+        // Get all checked-out reservations
+        $checkedOutReservations = Reservation::with(['reservationAmenities.amenity', 'reservationGuests.customer'])
+            ->where('status', 'Checked Out')
+            ->orderBy('check_out', 'desc')
             ->get();
 
         $amenities = Amenity::where('status', true)
             ->orderBy('amenities_name')
             ->get();
 
-        $guestData = $customers->mapWithKeys(function ($customer) {
-            return [$customer->id => [
-                'id' => $customer->id,
-                'first_name' => $customer->first_name,
-                'middle_name' => $customer->middle_name,
-                'last_name' => $customer->last_name,
-                'age' => $customer->age,
-                'gender' => $customer->gender,
-                'nationality' => $customer->nationality,
-                'reservation_guests' => $customer->reservationGuests->map(function ($reservationGuest) {
-                    return [
-                        'id' => $reservationGuest->id,
-                        'checked_out_at' => $reservationGuest->checked_out_at,
-                        'is_primary_guest' => (bool) $reservationGuest->is_primary_guest,
-                        'reservation' => $reservationGuest->reservation ? [
-                            'id' => $reservationGuest->reservation->id,
-                            'reservation_type' => $reservationGuest->reservation->reservation_type,
-                            'status' => $reservationGuest->reservation->status,
-                            'check_in' => $reservationGuest->reservation->check_in,
-                            'booker_name' => $reservationGuest->reservation->booker_name,
-                            'reservation_amenities' => $reservationGuest->reservation->reservationAmenities->map(function ($reservationAmenity) {
-                                return [
-                                    'pricing_type' => $reservationAmenity->pricing_type,
-                                    'amenity' => [
-                                        'amenities_name' => $reservationAmenity->amenity?->amenities_name,
-                                    ],
-                                ];
-                            })->values(),
-                            'reservation_guests' => $reservationGuest->reservation->reservationGuests->map(function ($guestEntry) {
-                                return [
-                                    'is_primary_guest' => (bool) $guestEntry->is_primary_guest,
-                                ];
-                            })->values(),
-                        ] : null,
-                    ];
-                })->values(),
+        $guestData = $checkedOutGuests->mapWithKeys(function ($guest) {
+            return [$guest->customer_id => [
+                'id' => $guest->customer->id,
+                'first_name' => $guest->customer->first_name,
+                'middle_name' => $guest->customer->middle_name,
+                'last_name' => $guest->customer->last_name,
+                'age' => $guest->customer->age,
+                'gender' => $guest->customer->gender,
+                'nationality' => $guest->customer->nationality,
+                'checked_out_at' => $guest->checked_out_at,
+                'reservation' => $guest->reservation ? [
+                    'id' => $guest->reservation->id,
+                    'status' => $guest->reservation->status,
+                    'check_in' => $guest->reservation->check_in,
+                    'check_out' => $guest->reservation->check_out,
+                    'booker_name' => $guest->reservation->booker_name,
+                ] : null,
             ]];
         });
 
-        return view('staff.staff_guests', compact('customers', 'guestData', 'amenities'));
-    })->name('guests');
+        return view('staff.staff_records', compact('checkedOutGuests', 'checkedOutReservations', 'guestData', 'amenities'));
+    })->name('records');
+
+    Route::get('/guests', function () {
+        return redirect()->route('staff.records');
+    });
 
     Route::post('/guests', function (Request $request) {
         $user = $request->session()->get('auth_user');
@@ -1302,7 +1289,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
         $data = $request->validate([
             'guest_mode' => ['required', 'in:with_primary,visitors_only'],
             'reservation_type' => ['required', 'in:walk_in,online'],
-            'check_in' => ['required', 'date'],
+            'check_in' => ['nullable', 'date'],
             'primary_guest' => ['nullable', 'array'],
             'primary_guest.first_name' => ['nullable', 'string', 'max:255'],
             'primary_guest.middle_name' => ['nullable', 'string', 'max:255'],
@@ -1338,6 +1325,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
             'booker_name' => trim(($data['primary_guest']['first_name'] ?? '') . ' ' . ($data['primary_guest']['last_name'] ?? '')),
             'phone' => $data['primary_guest']['phone'] ?? '',
             'email' => $data['primary_guest']['email'] ?? '',
+            'reservation_date' => now()->toDateTimeString(),
             'check_in' => null,
             'number_of_guests' => $guestCount > 0 ? $guestCount : 1,
             'reservation_type' => $data['reservation_type'],
@@ -1580,7 +1568,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
 
         // Update reservation with check-in date and status
         $reservation->update([
-            'check_in' => now()->toDateString(),
+            'check_in' => now()->toDateTimeString(),
             'status' => 'Checked In',
         ]);
 
@@ -1609,7 +1597,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
             ->max('checked_out_at');
 
         $reservation->update([
-            'check_out' => $latestCheckOut ? now()->toDateString() : null,
+            'check_out' => $latestCheckOut ? now()->toDateTimeString() : null,
         ]);
 
         return response()->json([
