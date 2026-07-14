@@ -6,17 +6,83 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Book a Visit — Hinaguan Nature Park</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600|playfair-display:600,700" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:400,500,600,700|playfair-display:400,500,600,700" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/css/reservationpage.css', 'resources/js/reservationpage.js'])
 </head>
-<body class="antialiased rp-page">
-    <main class="rp-main">
-        <section class="rp-filterbar">
-            <div class="rp-filterbar__copy">
-                <span class="rp-label">Reservations</span>
-                <h1 class="rp-title">Choose amenities or dates first</h1>
-                <p class="rp-desc">Pick an amenity to view its calendar first, or use the date picker later when you are ready.</p>
+<body class="antialiased rp-page" style="--rp-page-bg: url('{{ asset('images/background.jpeg') }}')">
+
+    {{-- Site header --}}
+    <div class="rp-site-header" id="rpSiteHeader">
+        <div class="rp-topbar">
+            <div class="rp-topbar__inner">
+                <p class="rp-topbar__text">
+                    <strong>Now Open!</strong>
+                    Daytime: Adult &#8369;70 &middot; Child &#8369;50 &nbsp;|&nbsp;
+                    Overnight: Adult &#8369;100 &nbsp;|&nbsp;
+                    <a href="{{ route('reservation') }}">Reserve Now</a>
+                    &nbsp;&middot;&nbsp; Call: 0917 861 8383
+                </p>
             </div>
+        </div>
+
+        <header class="rp-header is-scrolled" id="rpHeader">
+            <div class="rp-header__inner">
+                <a href="{{ route('home') }}" class="rp-logo">
+                    <span class="rp-logo__icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c-1.5 2.5-4 5-4 8a4 4 0 108 0c0-3-2.5-5.5-4-8z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M10 18h4"/>
+                        </svg>
+                    </span>
+                    <span class="rp-logo__text">
+                        <span class="rp-logo__name">Hinaguan Nature Park</span>
+                        <span class="rp-logo__location">Jasaan, Misamis Oriental</span>
+                    </span>
+                </a>
+
+                <nav class="rp-nav">
+                    <ul class="rp-nav__links">
+                        <li><a href="{{ route('home') }}#about">About</a></li>
+                        <li><a href="{{ route('home') }}#amenities">Amenities</a></li>
+                        <li><a href="{{ route('home') }}#activities">Activities</a></li>
+                        <li><a href="{{ route('home') }}#rates">Rates</a></li>
+                        <li><a href="{{ route('home') }}#gallery">Gallery</a></li>
+                        <li><a href="{{ route('home') }}#directions">Directions</a></li>
+                    </ul>
+                    <a href="{{ route('reservation') }}" class="rp-btn rp-btn--book is-active">Book Now</a>
+                </nav>
+
+                <button class="rp-menu-toggle" aria-label="Open menu" aria-expanded="false">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+    </div>
+
+    <nav class="rp-mobile-nav" aria-hidden="true">
+        <a href="{{ route('home') }}#about">About</a>
+        <a href="{{ route('home') }}#amenities">Amenities</a>
+        <a href="{{ route('home') }}#activities">Activities</a>
+        <a href="{{ route('home') }}#rates">Rates</a>
+        <a href="{{ route('home') }}#gallery">Gallery</a>
+        <a href="{{ route('home') }}#directions">Directions</a>
+        <a href="{{ route('reservation') }}" class="rp-btn rp-btn--book">Book Now</a>
+    </nav>
+
+    <main class="rp-main">
+        <section class="rp-hero">
+            <div class="rp-hero__content">
+                <div data-animate="fade-up">
+                    <span class="rp-label">Reservations</span>
+                    <h1 class="rp-title">Book Your Visit to Hinaguan</h1>
+                    <p class="rp-desc">Choose an amenity to view its calendar, or pick a date when you are ready. Select daytime or overnight to see what is available.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="rp-filterbar" data-animate="fade-up" data-delay="100">
             <div class="rp-filterbar__controls">
                 <div class="rp-date-card">
                     <span class="rp-date-card__label">Reservation date</span>
@@ -47,7 +113,7 @@
             </div>
         </section>
 
-        <section class="rp-slotbar" aria-label="Booking type">
+        <section class="rp-slotbar" aria-label="Booking type" data-animate="fade-up" data-delay="150">
             <span class="rp-slotbar__label">Booking type</span>
             <div class="rp-slotbar__buttons">
                 <button type="button" class="rp-slot-btn is-active" data-slot="Daytime">Daytime</button>
@@ -55,7 +121,7 @@
             </div>
         </section>
 
-        <section class="rp-subfilters">
+        <section class="rp-subfilters" data-animate="fade-up" data-delay="200">
             <div class="rp-subfilters__control">
                 <label for="filterType">Filter by</label>
                 <select id="filterType">
@@ -78,7 +144,7 @@
             </label>
         </section>
 
-        <section class="rp-grid" id="reservationGridShell">
+        <section class="rp-grid" id="reservationGridShell" data-animate="fade-up" data-delay="250">
             <div class="rp-grid__loading" id="availabilityLoading" hidden>
                 <div class="rp-grid__loading-spinner" aria-hidden="true"></div>
                 <p>Loading amenities for this date and slot…</p>
@@ -89,12 +155,14 @@
                 </div>
             @else
                 <div class="rp-grid__list" id="amenityGrid">
-                    @foreach($amenities as $amenity)
+                    @foreach($amenities as $index => $amenity)
                         @php
                             $minPrice = collect([$amenity->daytime_price, $amenity->nighttime_price])->filter()->min();
                             $maxPrice = collect([$amenity->daytime_price, $amenity->nighttime_price])->filter()->max();
                         @endphp
                         <article class="rp-card"
+                            data-animate="fade-up"
+                            data-delay="{{ min($index * 60, 360) }}"
                             data-amenity-id="{{ $amenity->id }}"
                             data-name="{{ $amenity->amenities_name }}"
                             data-min-capacity="{{ $amenity->minimum_capacity }}"
@@ -147,7 +215,7 @@
                 </div>
                 <div class="rp-selection-sheet__total" id="selectionTotalBox">
                     <div class="rp-selection-sheet__math" id="selectionMathText">No items selected</div>
-                    <div class="rp-selection-sheet__total-price" id="selectionTotalPrice">₱0.00</div>
+                    <div class="rp-selection-sheet__total-price" id="selectionTotalPrice">&#8369;0.00</div>
                 </div>
                 <ul class="rp-selection-sheet__list" id="selectionSummaryList"></ul>
                 <button type="button" id="selectionContinueBtn" class="rp-booking-form__button">Continue booking</button>
@@ -156,7 +224,7 @@
 
         <div class="rp-modal" id="amenityModal" aria-hidden="true">
             <div class="rp-modal__backdrop" data-close-modal></div>
-            <div class="rp-modal__panel">
+            <div class="rp-modal__panel rp-modal__panel--scroll">
                 <div class="rp-modal__header">
                     <div>
                         <p class="rp-modal__eyebrow">Amenity details</p>
@@ -174,7 +242,7 @@
                             </div>
                             <div class="rp-modal__pricebox">
                                 <span id="modalPriceLabel">Price</span>
-                                <strong id="modalPriceValue">₱0.00</strong>
+                                <strong id="modalPriceValue">&#8369;0.00</strong>
                                 <p id="modalPriceHint"></p>
                             </div>
                             <div id="airconChoice" class="rp-modal__aircon"></div>
@@ -210,7 +278,7 @@
 
         <div class="rp-modal" id="availabilityModal" aria-hidden="true">
             <div class="rp-modal__backdrop" data-close-availability-modal></div>
-            <div class="rp-modal__panel rp-modal__panel--compact">
+            <div class="rp-modal__panel rp-modal__panel--calendar rp-modal__panel--scroll">
                 <div class="rp-modal__header">
                     <div>
                         <p class="rp-modal__eyebrow">Availability calendar</p>
@@ -219,19 +287,22 @@
                     <button type="button" class="rp-modal__close" data-close-availability-modal>&times;</button>
                 </div>
                 <div class="rp-modal__content rp-modal__content--stacked">
+                    <p class="rp-modal__hint rp-modal__hint--top">Select a date to continue booking this amenity.</p>
                     <div class="rp-modal__slot-toggle" role="tablist" aria-label="Booking slot">
                         <button type="button" class="rp-slot-btn is-active" data-slot-toggle="Daytime">Daytime</button>
                         <button type="button" class="rp-slot-btn" data-slot-toggle="Nighttime">Nighttime</button>
                     </div>
-                    <div class="rp-calendar" id="availabilityCalendar"></div>
-                    <p class="rp-modal__hint">Available dates are clickable. Unavailable dates are disabled.</p>
+                    <div class="rp-calendar-wrap">
+                        <div class="rp-calendar" id="availabilityCalendar" role="grid" aria-label="Available dates"></div>
+                    </div>
+                    <p class="rp-modal__hint">Available dates are highlighted. Unavailable dates are dimmed.</p>
                 </div>
             </div>
         </div>
 
         <div class="rp-modal" id="multiAirconModal" aria-hidden="true">
             <div class="rp-modal__backdrop" data-close-multi-aircon-modal></div>
-            <div class="rp-modal__panel rp-modal__panel--compact">
+            <div class="rp-modal__panel rp-modal__panel--compact rp-modal__panel--scroll">
                 <div class="rp-modal__header">
                     <div>
                         <p class="rp-modal__eyebrow">Multiple reservation</p>
@@ -248,7 +319,7 @@
                         </div>
                         <div class="rp-modal__pricebox">
                             <span>Package price</span>
-                            <strong id="multiAirconPriceValue">₱0.00</strong>
+                            <strong id="multiAirconPriceValue">&#8369;0.00</strong>
                             <p id="multiAirconPriceHint">Choose whether this amenity will include aircon.</p>
                         </div>
                         <div id="multiAirconChoice" class="rp-modal__aircon"></div>
@@ -259,5 +330,9 @@
             </div>
         </div>
     </main>
+
+    <footer class="rp-footer">
+        <p>&copy; {{ date('Y') }} <strong>Hinaguan Nature Park</strong>. All rights reserved.</p>
+    </footer>
 </body>
 </html>

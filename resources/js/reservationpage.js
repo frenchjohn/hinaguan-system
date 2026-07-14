@@ -1,4 +1,70 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const siteHeader = document.getElementById('rpSiteHeader');
+    const menuToggle = document.querySelector('.rp-menu-toggle');
+    const mobileNav = document.querySelector('.rp-mobile-nav');
+    const mobileLinks = mobileNav?.querySelectorAll('a');
+    const animatedElements = document.querySelectorAll('[data-animate]');
+
+    const syncHeaderOffset = () => {
+        if (!siteHeader) return;
+        document.documentElement.style.setProperty('--rp-header-offset', `${siteHeader.offsetHeight}px`);
+    };
+
+    syncHeaderOffset();
+    window.addEventListener('resize', syncHeaderOffset, { passive: true });
+
+    const updateOverlayScrollLock = () => {
+        const hasOpenOverlay = Boolean(
+            document.querySelector('.rp-modal.is-open, .rp-selection-sheet.is-open, .rp-mobile-nav.is-open')
+        );
+        document.body.style.overflow = hasOpenOverlay ? 'hidden' : '';
+    };
+
+    const closeMobileNav = () => {
+        mobileNav?.classList.remove('is-open');
+        menuToggle?.setAttribute('aria-expanded', 'false');
+        updateOverlayScrollLock();
+    };
+
+    menuToggle?.addEventListener('click', () => {
+        const isOpen = mobileNav?.classList.toggle('is-open');
+        menuToggle.setAttribute('aria-expanded', String(isOpen));
+        updateOverlayScrollLock();
+    });
+
+    mobileLinks?.forEach((link) => {
+        link.addEventListener('click', closeMobileNav);
+    });
+
+    const animateObserver = new IntersectionObserver(
+        (entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+
+                const el = entry.target;
+                const delay = parseInt(el.dataset.delay ?? '0', 10);
+
+                window.setTimeout(() => {
+                    el.classList.add('is-visible');
+                }, delay);
+
+                animateObserver.unobserve(el);
+            });
+        },
+        {
+            rootMargin: '0px 0px -6% 0px',
+            threshold: 0.08,
+        }
+    );
+
+    animatedElements.forEach((el) => animateObserver.observe(el));
+
+    document.querySelectorAll('.rp-hero [data-animate]').forEach((el, index) => {
+        window.setTimeout(() => {
+            el.classList.add('is-visible');
+        }, 200 + index * 120);
+    });
+
     const filterType = document.getElementById('filterType');
     const filterMin = document.getElementById('filterMin');
     const filterMax = document.getElementById('filterMax');
@@ -234,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAvailabilityCalendar();
         availabilityModal.classList.add('is-open');
         availabilityModal.setAttribute('aria-hidden', 'false');
+        updateOverlayScrollLock();
 
         try {
             const url = new URL('/reservation/availability/calendar', window.location.origin);
@@ -261,22 +328,49 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!availabilityModal) return;
         availabilityModal.classList.remove('is-open');
         availabilityModal.setAttribute('aria-hidden', 'true');
+        updateOverlayScrollLock();
     };
 
     const renderAvailabilityCalendar = () => {
         if (!availabilityCalendar || !calendarAmenityId) return;
 
         availabilityCalendar.innerHTML = '';
+
+        ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach((weekday) => {
+            const label = document.createElement('span');
+            label.className = 'rp-calendar__weekday';
+            label.textContent = weekday;
+            availabilityCalendar.appendChild(label);
+        });
+
+        const firstDate = new Date();
+        firstDate.setHours(0, 0, 0, 0);
+        const startOffset = firstDate.getDay();
+
+        for (let i = 0; i < startOffset; i += 1) {
+            const spacer = document.createElement('span');
+            spacer.className = 'rp-calendar__day rp-calendar__day--empty';
+            spacer.setAttribute('aria-hidden', 'true');
+            availabilityCalendar.appendChild(spacer);
+        }
+
         const days = Array.from({ length: 30 }, (_, index) => {
-            const date = new Date();
-            date.setDate(date.getDate() + index);
+            const date = new Date(firstDate);
+            date.setDate(firstDate.getDate() + index);
             const isoDate = date.toISOString().slice(0, 10);
-            const isAvailable = calendarAvailability.some(entry => entry.date === isoDate && entry[calendarSlot.toLowerCase()] === true);
+            const slotKey = calendarSlot.toLowerCase();
+            const isAvailable = calendarAvailability.some(
+                (entry) => entry.date === isoDate && entry[slotKey] === true
+            );
+
             const dayButton = document.createElement('button');
             dayButton.type = 'button';
             dayButton.className = `rp-calendar__day ${isAvailable ? 'is-available' : 'is-disabled'}`;
-            dayButton.textContent = date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
             dayButton.disabled = !isAvailable;
+            dayButton.innerHTML = `
+                <span class="rp-calendar__day-num">${date.getDate()}</span>
+                <span class="rp-calendar__day-month">${date.toLocaleDateString('en', { month: 'short' })}</span>
+            `;
             dayButton.addEventListener('click', () => {
                 if (!isAvailable) return;
                 if (dateInput) {
@@ -285,10 +379,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateReservationDay();
                 closeAvailabilityModal();
                 refreshAvailability();
-                
-                // Automatically open the booking modal for this amenity after date is selected
+
                 if (calendarSourceCard) {
-                    setTimeout(() => {
+                    window.setTimeout(() => {
                         openModal(calendarSourceCard);
                     }, 300);
                 }
@@ -296,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return dayButton;
         });
 
-        days.forEach(day => availabilityCalendar.appendChild(day));
+        days.forEach((day) => availabilityCalendar.appendChild(day));
     };
 
     const isAvailableForSlot = (card, dateString, slot) => {
@@ -499,6 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (multiAirconModal) {
             multiAirconModal.classList.add('is-open');
             multiAirconModal.setAttribute('aria-hidden', 'false');
+            updateOverlayScrollLock();
         }
         if (selectionFloatingBar) {
             selectionFloatingBar.hidden = true;
@@ -509,6 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (multiAirconModal) {
             multiAirconModal.classList.remove('is-open');
             multiAirconModal.setAttribute('aria-hidden', 'true');
+            updateOverlayScrollLock();
         }
         if (selectionFloatingBar && multiSelectionEnabled) {
             const count = selectedCards.length;
@@ -592,6 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectionSheet) {
             selectionSheet.classList.add('is-open');
             selectionSheet.setAttribute('aria-hidden', 'false');
+            updateOverlayScrollLock();
         }
     };
 
@@ -599,6 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectionSheet) {
             selectionSheet.classList.remove('is-open');
             selectionSheet.setAttribute('aria-hidden', 'true');
+            updateOverlayScrollLock();
         }
     };
 
@@ -636,6 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
+        updateOverlayScrollLock();
         if (selectionFloatingBar) {
             selectionFloatingBar.hidden = true;
         }
@@ -644,6 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModal = () => {
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
+        updateOverlayScrollLock();
         if (selectionFloatingBar && multiSelectionEnabled) {
             const count = selectedCards.length;
             selectionFloatingBar.hidden = count === 0;
