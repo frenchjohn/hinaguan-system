@@ -183,3 +183,96 @@ body {
 .modal__close { border:0; background:transparent; font-size:1.2rem; cursor:pointer; color: var(--hp-text); }
 .modal__body p { margin: .25rem 0 1rem; color: var(--hp-text-muted); }
 .modal__body .otp-form { margin-top: 0; }
+
+@media (max-width: 992px) {
+    .settings-form__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal__panel {
+        width: calc(100% - 2rem);
+    }
+}
+
+@media (max-width: 768px) {
+    .dash-content {
+        padding: 1.25rem;
+    }
+
+    .settings-panel {
+        padding: 1.25rem;
+    }
+
+    .settings-panel__eyebrow {
+        font-size: 0.6875rem;
+    }
+
+    .settings-panel__title {
+        font-size: 1.25rem;
+    }
+
+    .settings-panel__text {
+        font-size: 0.875rem;
+    }
+
+    .settings-form__grid {
+        gap: 0.875rem;
+    }
+
+    .settings-form__field label {
+        font-size: 0.8125rem;
+    }
+
+    .settings-form__field input {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.875rem;
+    }
+
+    .btn {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.875rem;
+    }
+
+    .otp-card {
+        padding: 0.875rem;
+    }
+
+    .otp-form {
+        flex-direction: column;
+    }
+
+    .otp-form input {
+        min-width: 100%;
+    }
+
+    .modal__panel {
+        padding: 0.875rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dash-content {
+        padding: 1rem;
+    }
+
+    .settings-panel {
+        padding: 1rem;
+    }
+
+    .settings-panel__title {
+        font-size: 1.125rem;
+    }
+
+    .settings-form__field input {
+        padding: 0.5625rem 0.75rem;
+        font-size: 0.8125rem;
+    }
+
+    .btn {
+        padding: 0.5625rem 0.75rem;
+    }
+
+    .modal__panel {
+        padding: 0.75rem;
+    }
+}

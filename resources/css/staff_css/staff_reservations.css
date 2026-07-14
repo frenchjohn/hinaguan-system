@@ -837,3 +837,175 @@
 [data-theme="dark"] .today-reservation {
     background: rgba(200, 164, 93, 0.15);
 }
+
+@media (max-width: 992px) {
+    .guest-summary-card__header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .guest-toolbar {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .guest-table-wrap {
+        overflow-x: auto;
+    }
+
+    .guest-table {
+        min-width: 600px;
+    }
+
+    .guest-modal__content {
+        width: calc(100% - 2rem);
+        max-height: 80vh;
+    }
+
+    .guest-card__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .guest-panel {
+        padding: 1rem;
+    }
+
+    .guest-summary-card {
+        padding: 1rem;
+    }
+
+    .guest-summary-card__title {
+        font-size: 1rem;
+    }
+
+    .guest-summary-card__count {
+        font-size: 0.75rem;
+    }
+
+    .guest-toolbar {
+        grid-template-columns: 1fr;
+        padding: 0.875rem;
+    }
+
+    .guest-filter-toggle {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.8125rem;
+    }
+
+    .guest-table th,
+    .guest-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8125rem;
+    }
+
+    .guest-form__group {
+        gap: 0.375rem;
+    }
+
+    .guest-form__label {
+        font-size: 0.75rem;
+    }
+
+    .guest-form__field input,
+    .guest-form__field select {
+        padding: 0.625rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .guest-form__row--two,
+    .guest-form__row--three {
+        grid-template-columns: 1fr;
+    }
+
+    .guest-form__section {
+        padding: 0.875rem;
+    }
+
+    .guest-form__section-title {
+        font-size: 0.9375rem;
+    }
+
+    .guest-modal__content {
+        padding: 1.25rem;
+    }
+
+    .guest-modal__title {
+        font-size: 1.125rem;
+    }
+
+    .guest-form__actions {
+        flex-direction: column;
+    }
+
+    .guest-form__button {
+        width: 100%;
+    }
+
+    .guest-companion-pill {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .guest-companion-pill__name {
+        font-size: 0.875rem;
+    }
+
+    .dash-panel__title {
+        font-size: 1.25rem;
+    }
+
+    .dash-panel__subtitle {
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .guest-panel {
+        padding: 0.875rem;
+    }
+
+    .guest-summary-card {
+        padding: 0.875rem;
+    }
+
+    .guest-summary-card__title {
+        font-size: 0.9375rem;
+    }
+
+    .guest-toolbar {
+        padding: 0.75rem;
+    }
+
+    .guest-toolbar__field input,
+    .guest-toolbar__field select {
+        padding: 0.5625rem 0.6875rem;
+        font-size: 0.8125rem;
+    }
+
+    .guest-table th,
+    .guest-table td {
+        padding: 0.625rem 0.375rem;
+        font-size: 0.75rem;
+    }
+
+    .guest-modal__content {
+        padding: 1rem;
+    }
+
+    .guest-modal__title {
+        font-size: 1rem;
+    }
+
+    .guest-card {
+        padding: 0.875rem;
+    }
+
+    .guest-form__section {
+        padding: 0.75rem;
+    }
+
+    .guest-form__button {
+        padding: 0.625rem 1.25rem;
+    }
+}

@@ -6,16 +6,25 @@
     <meta name="description" content="Hinaguan Nature Park staff and admin login page.">
     <title>Login — Hinaguan Nature Park</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700|playfair-display:600,700" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:400,500,600,700|playfair-display:400,500,600,700" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/css/loginpage.css', 'resources/js/loginpage.js'])
 </head>
-<body class="login-page">
+<body class="login-page" style="--lp-page-bg: url('{{ asset('images/background.jpeg') }}')">
     <main class="login-page__wrapper">
         <section class="login-page__split">
             <aside class="login-panel login-panel--brand">
                 <div class="login-panel__content">
-                    <span class="login-panel__eyebrow">Hinaguan Nature Park</span>
-                    <h1 class="login-panel__title">Park staff portal</h1>
+                    <div class="login-panel__logo">
+                        <span class="login-panel__logo-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c-1.5 2.5-4 5-4 8a4 4 0 108 0c0-3-2.5-5.5-4-8z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M10 18h4"/>
+                            </svg>
+                        </span>
+                        <span class="login-panel__logo-text">Hinaguan Nature Park</span>
+                    </div>
+                    <span class="login-panel__eyebrow">Staff Portal</span>
+                    <h1 class="login-panel__title">Park Management</h1>
                     <p class="login-panel__text">
                         Secure access for park staff and administrators.
                         Manage reservations, view the dashboard, and keep operations running smoothly.
@@ -27,8 +36,8 @@
             <aside class="login-panel login-panel--form">
                 <section class="login-card">
                     <div class="login-card__intro">
-                        <span class="login-card__label">Partner Portal</span>
-                        <h2>Sign in to your account</h2>
+                        <span class="login-card__label">Sign In</span>
+                        <h2>Welcome Back</h2>
                         <p>Only staff and admin can access this area.</p>
                     </div>
 

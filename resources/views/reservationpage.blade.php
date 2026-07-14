@@ -75,6 +75,12 @@
         <section class="rp-hero">
             <div class="rp-hero__content">
                 <div data-animate="fade-up">
+                    <a href="{{ route('home') }}" class="rp-back-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Back to Homepage
+                    </a>
                     <span class="rp-label">Reservations</span>
                     <h1 class="rp-title">Book Your Visit to Hinaguan</h1>
                     <p class="rp-desc">Choose an amenity to view its calendar, or pick a date when you are ready. Select daytime or overnight to see what is available.</p>
