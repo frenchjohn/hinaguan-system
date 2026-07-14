@@ -38,19 +38,17 @@ class StaffGuestCreationTest extends TestCase
                 'email' => 'staff@example.com',
                 'role' => 'staff',
             ],
-        ])->post(route('staff.guests.store'), [
+        ])->post(route('staff.checkins.guests.store'), [
             'guest_mode' => 'with_primary',
             'reservation_type' => 'online',
             'check_in' => now()->addDay()->toDateString(),
-            'check_out' => now()->addDays(2)->toDateString(),
-            'is_checked_in' => '1',
             'primary_guest' => [
                 'first_name' => 'Maria',
                 'middle_name' => 'Clara',
                 'last_name' => 'Santos',
                 'age' => 29,
                 'gender' => 'Female',
-                'nationality' => 'Filipino',
+                'nationality_option' => 'Filipino',
                 'phone' => '09171234567',
                 'email' => 'maria@example.com',
             ],
@@ -60,7 +58,7 @@ class StaffGuestCreationTest extends TestCase
                 'last_name' => 'Dela Cruz',
                 'age' => 31,
                 'gender' => 'Male',
-                'nationality' => 'Filipino',
+                'nationality_option' => 'Filipino',
                 'phone' => '09181234567',
                 'email' => 'rico@example.com',
             ]],
@@ -70,7 +68,7 @@ class StaffGuestCreationTest extends TestCase
             'total_amount' => 2500,
         ]);
 
-        $response->assertRedirect(route('staff.guests'));
+        $response->assertRedirect(route('staff.checkins'));
         $this->assertDatabaseHas('reservations', ['reservation_type' => 'online', 'status' => 'Checked In', 'number_of_guests' => 2]);
         $this->assertDatabaseHas('customers', ['email' => 'maria@example.com']);
         $this->assertDatabaseHas('reservation_guests', ['is_primary_guest' => true]);

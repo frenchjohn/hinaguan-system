@@ -6,13 +6,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Reservations — Hinaguan Nature Park</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700|playfair-display:600,700" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:400,500,600,700|playfair-display:400,500,600,700" rel="stylesheet">
     @vite([
         'resources/css/app.css',
+        'resources/css/homepage.css',
         'resources/components/css_js/header.css',
         'resources/components/css_js/sidemenu.css',
         'resources/css/staff_css/staff_dashboard.css',
-        'resources/css/staff_css/staff_guests.css',
         'resources/css/staff_css/staff_reservations.css',
         'resources/components/css_js/header.js',
         'resources/components/css_js/sidemenu.js',

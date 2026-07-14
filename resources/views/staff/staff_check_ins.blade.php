@@ -7,13 +7,14 @@
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 	<title>Check Ins — Hinaguan Nature Park</title>
 	<link rel="preconnect" href="https://fonts.bunny.net">
-	<link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700|playfair-display:600,700" rel="stylesheet">
+	<link href="https://fonts.bunny.net/css?family=montserrat:400,500,600,700|playfair-display:400,500,600,700" rel="stylesheet">
 	@vite([
 		'resources/css/app.css',
+		'resources/css/homepage.css',
 		'resources/components/css_js/header.css',
 		'resources/components/css_js/sidemenu.css',
 		'resources/css/staff_css/staff_dashboard.css',
-		'resources/css/staff_css/staff_guests.css',
+		'resources/css/staff_css/staff_check_ins.css',
 		'resources/components/css_js/header.js',
 		'resources/components/css_js/sidemenu.js',
 		'resources/js/staff_js/staff_check_ins.js',
@@ -59,6 +60,10 @@
 								return $customer->reservationGuests->filter(function ($guest) {
 									$reservation = $guest->reservation ?? null;
 									if (! $reservation) {
+										return false;
+									}
+									// Skip if guest is individually checked out
+									if ($guest->checked_out_at) {
 										return false;
 									}
 									// Only show guests who have been checked in
@@ -155,6 +160,9 @@
 										$hasActiveReservation = $customer->reservationGuests->filter(function ($guest) {
 											$reservation = $guest->reservation ?? null;
 											if (! $reservation) return false;
+											// Skip if guest is individually checked out
+											if ($guest->checked_out_at) return false;
+											// Skip if reservation is checked out
 											$status = strtolower(str_replace(' ', '_', (string) ($reservation->status ?? '')));
 											return $status !== 'checked_out' && $status !== 'checkedout' && $status !== 'checked-out';
 										})->isNotEmpty();
@@ -165,9 +173,13 @@
 									@endif
 
 									@php
-										$reservationEntry = $customer->reservationGuests->first(function ($guest) {
+										$reservationEntry = $customer->reservationGuests->filter(function ($guest) {
+											return $guest->reservation && !$guest->checked_out_at;
+										})->first(function ($guest) {
 											return $guest->reservation && $guest->reservation->reservation_type === 'walk_in';
-										}) ?? $customer->reservationGuests->first();
+										}) ?? $customer->reservationGuests->filter(function ($guest) {
+											return $guest->reservation && !$guest->checked_out_at;
+										})->first();
 										$reservationType = $reservationEntry?->reservation?->reservation_type;
 										$reservationTypeLabel = $reservationType === 'walk_in' ? 'walk-in' : ($reservationType ?? 'N/A');
 									@endphp
@@ -223,6 +235,14 @@
 							<span>Total active reservations</span>
 							<strong id="reservationSummaryTotal">{{ count($activeReservations ?? []) }}</strong>
 						</div>
+						<div class="guest-summary-card">
+							<span>Total amount</span>
+							<strong id="reservationSummaryTotalAmount">₱{{ number_format(collect($activeReservations ?? [])->sum('total_amount'), 2) }}</strong>
+						</div>
+						<div class="guest-summary-card">
+							<span>Total guests</span>
+							<strong id="reservationSummaryTotalGuests">{{ collect($activeReservations ?? [])->sum('number_of_guests') }}</strong>
+						</div>
 					</div>
 
 					<div class="guest-table-wrap" id="reservationTableWrap">
@@ -260,7 +280,7 @@
 												<div class="guest-name">—</div>
 											@endif
 										</td>
-										<td>{{ $reservation->number_of_guests ?? $reservation->reservationGuests->count() }}</td>
+										<td>{{ $reservation->number_of_guests }}</td>
 										<td>
 											@php
 												$amenityNames = $reservation->reservationAmenities->pluck('amenity.amenities_name')->filter()->unique()->join(', ');
@@ -286,6 +306,10 @@
 							<span id="guestModalRole" class="guest-modal__role-badge"></span>
 						</div>
 						<div id="guestModalBody" class="guest-modal__body"></div>
+						<div class="guest-form__actions" id="guestModalActions">
+							<button type="button" class="guest-form__button--secondary" data-close-modal="true">Close</button>
+							<button type="button" class="guest-form__button" id="guestCheckOutBtn">Check Out</button>
+						</div>
 					</div>
 				</div>
 
@@ -294,7 +318,7 @@
 					<div class="guest-modal__content guest-modal__content--wide" role="dialog" aria-modal="true" aria-labelledby="addGuestModalTitle">
 						<button type="button" class="guest-modal__close" data-close-add-modal="true" aria-label="Close add guest form">&times;</button>
 						<h3 id="addGuestModalTitle" class="guest-modal__title">Add Guest Reservation</h3>
-						<form id="addGuestForm" class="guest-form" action="{{ route('staff.guests.store') }}" method="POST">
+						<form id="addGuestForm" class="guest-form" action="{{ route('staff.checkins.guests.store') }}" method="POST">
 							@csrf
 							<div class="guest-form__group">
 								<label class="guest-form__label">Guest mode</label>
@@ -612,6 +636,10 @@
 							<span id="reservationModalStatus" class="guest-modal__role-badge"></span>
 						</div>
 						<div id="reservationModalBody" class="guest-modal__body"></div>
+						<div class="guest-form__actions" id="reservationModalActions">
+							<button type="button" class="guest-form__button--secondary" data-close-reservation-modal="true">Close</button>
+							<button type="button" class="guest-form__button" id="reservationCheckOutBtn">Check Out</button>
+						</div>
 					</div>
 				</div>
 

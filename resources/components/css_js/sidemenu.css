@@ -9,10 +9,14 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
-    background: linear-gradient(180deg, var(--dash-green-dark) 0%, #142d18 100%);
+    background: linear-gradient(180deg, var(--hp-green-dark) 0%, var(--hp-green-darkest) 100%);
     color: #fff;
-    transition: transform 0.25s ease;
+    transition: transform 0.25s ease, background 0.3s ease;
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .dash-sidebar {
+    background: linear-gradient(180deg, #001a11 0%, #000d08 100%);
 }
 
 .dash-sidebar__brand {
@@ -27,7 +31,7 @@
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 50%;
-    background: var(--dash-gold);
+    background: var(--hp-gold);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -37,7 +41,7 @@
 .dash-sidebar__logo svg {
     width: 1.375rem;
     height: 1.375rem;
-    color: var(--dash-green-dark);
+    color: var(--hp-green-dark);
 }
 
 .dash-sidebar__brand-text {
@@ -46,7 +50,7 @@
 
 .dash-sidebar__brand-name {
     display: block;
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: var(--hp-font-display);
     font-size: 0.9375rem;
     font-weight: 700;
     line-height: 1.2;
@@ -110,14 +114,14 @@
 }
 
 .dash-sidebar__link.is-active {
-    background: rgba(201, 162, 39, 0.18);
-    color: var(--dash-gold-light);
-    box-shadow: inset 3px 0 0 var(--dash-gold);
+    background: rgba(200, 164, 93, 0.18);
+    color: var(--hp-gold-light);
+    box-shadow: inset 3px 0 0 var(--hp-gold);
 }
 
 .dash-sidebar__link.is-active svg {
     opacity: 1;
-    color: var(--dash-gold-light);
+    color: var(--hp-gold-light);
 }
 
 .dash-sidebar__footer {

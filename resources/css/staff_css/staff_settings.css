@@ -4,9 +4,10 @@
 
 body {
     margin: 0;
-    font-family: 'Instrument Sans', sans-serif;
-    background: #f6f7fb;
-    color: #0f172a;
+    font-family: var(--hp-font-body);
+    background: var(--hp-cream);
+    color: var(--hp-text);
+    transition: background 0.3s ease, color 0.3s ease;
 }
 
 .dash-layout {
@@ -26,27 +27,36 @@ body {
     padding: 2rem;
     background: #fff;
     border-radius: 1rem;
-    box-shadow: 0 18px 45px rgba(15, 23, 42, .08);
+    box-shadow: 0 18px 45px rgba(13, 44, 29, 0.08);
+    transition: background 0.3s ease, border-color 0.3s ease;
+    border: 1px solid rgba(13, 44, 29, 0.1);
+}
+
+[data-theme="dark"] .settings-panel {
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .settings-panel__eyebrow {
     margin: 0 0 .3rem;
     font-size: .8rem;
     font-weight: 700;
-    color: #2563eb;
+    color: var(--hp-gold-dark);
     text-transform: uppercase;
     letter-spacing: .16em;
 }
 
 .settings-panel__title {
     margin: 0;
+    font-family: var(--hp-font-display);
     font-size: 1.5rem;
     font-weight: 700;
+    color: var(--hp-text);
 }
 
 .settings-panel__text {
     margin: .4rem 0 0;
-    color: #475569;
+    color: var(--hp-text-muted);
 }
 
 .settings-form__grid {
@@ -63,15 +73,23 @@ body {
 
 .settings-form__field label {
     font-weight: 600;
-    color: #334155;
+    color: var(--hp-text);
 }
 
 .settings-form__field input {
     width: 100%;
-    border: 1px solid #cbd5e1;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: .75rem;
     padding: .8rem .9rem;
     font: inherit;
+    background: #fff;
+    color: var(--hp-text);
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .settings-form__field input {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .btn {
@@ -83,9 +101,15 @@ body {
 }
 
 .btn--primary {
-    background: #2563eb;
+    background: var(--hp-green);
     color: #fff;
     margin-top: 1rem;
+    transition: background 0.2s ease;
+}
+
+.btn--primary:hover {
+    background: var(--hp-gold);
+    color: var(--hp-green-dark);
 }
 
 .alert {
@@ -95,21 +119,27 @@ body {
 }
 
 .alert--success {
-    background: #ecfdf3;
-    color: #166534;
+    background: rgba(26, 58, 31, 0.15);
+    color: var(--hp-green);
 }
 
 .alert--error {
-    background: #fef2f2;
-    color: #b91c1c;
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
 }
 
 .otp-card {
     margin-top: 1.5rem;
     padding: 1rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: 1rem;
-    background: #f8fafc;
+    background: var(--hp-cream);
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .otp-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .otp-form {
@@ -122,10 +152,18 @@ body {
 .otp-form input {
     flex: 1;
     min-width: 220px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: .75rem;
     padding: .8rem .9rem;
     font: inherit;
+    background: #fff;
+    color: var(--hp-text);
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .otp-form input {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Modal styles reused for OTP modal */
@@ -138,9 +176,10 @@ body {
     z-index: 1000;
 }
 .modal.is-open { display: flex; }
-.modal__backdrop { position: absolute; inset: 0; background: rgba(15,23,42,.45); }
-.modal__panel { position: relative; width: min(520px, calc(100vw - 2rem)); background: #fff; border-radius: 1rem; padding: 1rem; box-shadow: 0 20px 60px rgba(15,23,42,.2); z-index: 1; }
+.modal__backdrop { position: absolute; inset: 0; background: rgba(13,44,29,.45); }
+.modal__panel { position: relative; width: min(520px, calc(100vw - 2rem)); background: #fff; border-radius: 1rem; padding: 1rem; box-shadow: 0 20px 60px rgba(13,44,29,.2); z-index: 1; transition: background 0.3s ease; }
+[data-theme="dark"] .modal__panel { background: rgba(30, 30, 30, 0.95); }
 .modal__header { display:flex; justify-content:space-between; align-items:center; margin-bottom: .75rem; }
-.modal__close { border:0; background:transparent; font-size:1.2rem; cursor:pointer; }
-.modal__body p { margin: .25rem 0 1rem; color: #475569; }
+.modal__close { border:0; background:transparent; font-size:1.2rem; cursor:pointer; color: var(--hp-text); }
+.modal__body p { margin: .25rem 0 1rem; color: var(--hp-text-muted); }
 .modal__body .otp-form { margin-top: 0; }

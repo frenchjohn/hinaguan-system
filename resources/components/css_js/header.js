@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.querySelector('.dash-sidebar__overlay');
     const userBtn = document.querySelector('[data-dash-user-toggle]');
     const userDropdown = document.querySelector('.dash-header__dropdown');
+    const themeToggle = document.querySelector('[data-theme-toggle]');
 
     const closeSidebar = () => layout?.classList.remove('sidebar-open');
     const openSidebar = () => layout?.classList.add('sidebar-open');
@@ -34,4 +35,22 @@ document.addEventListener('DOMContentLoaded', () => {
             closeSidebar();
         }
     });
+
+    // Theme toggle functionality
+    const getStoredTheme = () => localStorage.getItem('theme') || 'light';
+    const setTheme = (theme) => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    };
+
+    const toggleTheme = () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        setTheme(newTheme);
+    };
+
+    themeToggle?.addEventListener('click', toggleTheme);
+
+    // Initialize theme
+    setTheme(getStoredTheme());
 });

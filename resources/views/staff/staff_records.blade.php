@@ -6,9 +6,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Records — Hinaguan Nature Park</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700|playfair-display:600,700" rel="stylesheet">
+    <link href="https://fonts.bunny.net/css?family=montserrat:400,500,600,700|playfair-display:400,500,600,700" rel="stylesheet">
     @vite([
         'resources/css/app.css',
+        'resources/css/homepage.css',
         'resources/components/css_js/header.css',
         'resources/components/css_js/sidemenu.css',
         'resources/css/staff_css/staff_dashboard.css',
@@ -238,6 +239,17 @@
                             <h3 id="guestModalTitle" class="guest-modal__title">Guest Details</h3>
                         </div>
                         <div id="guestModalBody" class="guest-modal__body"></div>
+                    </div>
+                </div>
+
+                <div class="guest-modal" id="reservationModal" aria-hidden="true">
+                    <div class="guest-modal__backdrop" data-close-reservation-modal="true"></div>
+                    <div class="guest-modal__content" role="dialog" aria-modal="true" aria-labelledby="reservationModalTitle">
+                        <button type="button" class="guest-modal__close" data-close-reservation-modal="true" aria-label="Close details">&times;</button>
+                        <div class="guest-modal__header">
+                            <h3 id="reservationModalTitle" class="guest-modal__title">Reservation Details</h3>
+                        </div>
+                        <div id="reservationModalBody" class="guest-modal__body"></div>
                     </div>
                 </div>
 

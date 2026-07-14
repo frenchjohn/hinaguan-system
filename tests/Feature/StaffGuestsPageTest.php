@@ -31,12 +31,11 @@ class StaffGuestsPageTest extends TestCase
                 'email' => 'staff@example.com',
                 'role' => 'staff',
             ],
-        ])->get(route('staff.guests'));
+        ])->get(route('staff.records'));
 
         $response->assertOk()
-            ->assertSee('Guest Management')
+            ->assertSee('Records')
             ->assertSee($customer->first_name)
-            ->assertSee($customer->last_name)
-            ->assertSee('Reservation Type');
+            ->assertSee($customer->last_name);
     }
 }

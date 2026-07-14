@@ -1,10 +1,16 @@
 :root {
-    --reports-bg: #f8fafc;
+    --reports-bg: var(--hp-cream);
     --reports-surface: #ffffff;
-    --reports-border: #e5e7eb;
-    --reports-text: #0f172a;
-    --reports-muted: #475569;
-    --reports-accent: #2563eb;
+    --reports-border: rgba(13, 44, 29, 0.1);
+    --reports-text: var(--hp-text);
+    --reports-muted: var(--hp-text-muted);
+    --reports-accent: var(--hp-gold);
+}
+
+[data-theme="dark"] {
+    --reports-bg: var(--hp-green-dark);
+    --reports-surface: rgba(255, 255, 255, 0.05);
+    --reports-border: rgba(255, 255, 255, 0.1);
 }
 
 .reports-head {
@@ -17,23 +23,25 @@
     display: inline-flex;
     padding: 0.45rem 0.9rem;
     border-radius: 999px;
-    background: rgba(37, 99, 235, 0.08);
-    color: var(--reports-accent);
+    background: rgba(200, 164, 93, 0.12);
+    color: var(--hp-gold-dark);
     font-size: 0.85rem;
     font-weight: 700;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
 }
 
 .reports-head__title {
     margin: 0;
+    font-family: var(--hp-font-display);
     font-size: 1.9rem;
     line-height: 1.1;
-    color: var(--reports-text);
+    color: var(--hp-text);
 }
 
 .reports-head__text {
     margin: 0.75rem 0 0;
-    color: var(--reports-muted);
+    color: var(--hp-text-muted);
     max-width: 55rem;
     line-height: 1.75;
 }
@@ -48,9 +56,24 @@
 .reports-print-button {
     border-radius: 999px;
     padding: 0.85rem 1.35rem;
-    border: 1px solid #cbd5e1;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     background: #fff;
-    color: var(--reports-text);
+    color: var(--hp-text);
+    transition: all 0.2s ease;
+}
+
+.reports-print-button:hover {
+    background: var(--hp-gold);
+    color: var(--hp-green-dark);
+}
+
+[data-theme="dark"] .reports-print-button {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .reports-print-button:hover {
+    background: rgba(200, 164, 93, 0.2);
 }
 
 .reports-filters {
@@ -60,8 +83,14 @@
     padding: 1.25rem 1.5rem;
     margin-bottom: 1.5rem;
     background: #fff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: 1rem;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .reports-filters {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .reports-filter-group {
@@ -70,7 +99,7 @@
 }
 
 .reports-filter-group label {
-    color: var(--reports-muted);
+    color: var(--hp-text-muted);
     font-size: 0.85rem;
     font-weight: 700;
 }
@@ -78,20 +107,32 @@
 .reports-filter-group select,
 .reports-filter-group input {
     width: 100%;
-    border: 1px solid #cbd5e1;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: 0.85rem;
     padding: 0.8rem 1rem;
     background: #fff;
-    color: var(--reports-text);
+    color: var(--hp-text);
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .reports-filter-group select,
+[data-theme="dark"] .reports-filter-group input {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .reports-print-summary {
     display: none;
     margin-bottom: 1.5rem;
     padding: 1rem 1.25rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: 1rem;
-    background: #f8fafc;
+    background: var(--hp-cream);
+}
+
+[data-theme="dark"] .reports-print-summary {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .reports-print-summary__row {
@@ -113,13 +154,19 @@
 .reports-metric-card {
     padding: 1.25rem 1.5rem;
     background: #fff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: 1rem;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .reports-metric-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .reports-metric-card__label {
     margin: 0 0 0.75rem;
-    color: var(--reports-muted);
+    color: var(--hp-text-muted);
     font-size: 0.85rem;
     font-weight: 700;
 }
@@ -128,33 +175,45 @@
     margin: 0;
     font-size: 1.75rem;
     font-weight: 700;
-    color: var(--reports-text);
+    color: var(--hp-text);
 }
 
 .reports-panel {
     background: #fff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid rgba(13, 44, 29, 0.1);
     border-radius: 1.25rem;
     overflow: hidden;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .reports-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .reports-panel__head {
     padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
+    border-bottom: 1px solid rgba(13, 44, 29, 0.1);
+    background: var(--hp-cream);
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .reports-panel__head {
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
 .reports-panel__title {
     margin: 0;
     font-size: 1rem;
     font-weight: 700;
-    color: var(--reports-text);
+    color: var(--hp-text);
 }
 
 .reports-panel__meta {
     display: block;
     margin-top: 0.5rem;
-    color: var(--reports-muted);
+    color: var(--hp-text-muted);
     font-size: 0.9rem;
 }
 
@@ -170,25 +229,44 @@
     width: 100%;
     border-collapse: collapse;
     min-width: 720px;
+    background: #fff;
+    transition: background 0.3s ease;
+}
+
+[data-theme="dark"] .reports-table {
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .reports-table th,
 .reports-table td {
     padding: 0.95rem 1rem;
     text-align: left;
-    border: 1px solid #e5e7eb;
+    border: 1px solid rgba(13, 44, 29, 0.1);
+    transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
+}
+
+[data-theme="dark"] .reports-table th,
+[data-theme="dark"] .reports-table td {
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--hp-text);
 }
 
 .reports-table th {
     font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--reports-muted);
-    background: #f8fafc;
+    color: var(--hp-text-muted);
+    background: var(--hp-cream);
+    transition: background 0.3s ease;
+}
+
+[data-theme="dark"] .reports-table th {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--hp-gold);
 }
 
 .reports-table td {
-    color: var(--reports-text);
+    color: var(--hp-text);
     font-size: 0.95rem;
 }
 
