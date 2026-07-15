@@ -157,7 +157,8 @@ Route::get('/reservation/availability/calendar', function (Request $request) {
         ? ['Nighttime', 'Nighttime Aircon']
         : ['Daytime', 'Daytime Aircon'];
 
-    $today = now()->startOfDay();
+    // Use today's date in the application's timezone to avoid offset issues
+    $today = \Carbon\Carbon::today()->startOfDay();
     $availability = [];
 
     for ($i = 0; $i < 30; $i++) {

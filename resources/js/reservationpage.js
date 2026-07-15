@@ -343,6 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
             availabilityCalendar.appendChild(label);
         });
 
+        // Use today's date in local timezone to avoid offset issues
         const firstDate = new Date();
         firstDate.setHours(0, 0, 0, 0);
         const startOffset = firstDate.getDay();
@@ -357,7 +358,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const days = Array.from({ length: 30 }, (_, index) => {
             const date = new Date(firstDate);
             date.setDate(firstDate.getDate() + index);
-            const isoDate = date.toISOString().slice(0, 10);
+            // Use local date formatting to avoid timezone offset issues
+            const isoDate = date.getFullYear() + '-' + 
+                String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(date.getDate()).padStart(2, '0');
             const slotKey = calendarSlot.toLowerCase();
             const isAvailable = calendarAvailability.some(
                 (entry) => entry.date === isoDate && entry[slotKey] === true
@@ -378,13 +382,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 updateReservationDay();
                 closeAvailabilityModal();
-                refreshAvailability();
-
-                if (calendarSourceCard) {
-                    window.setTimeout(() => {
+                
+                // Refresh availability after a short delay to ensure date is set
+                window.setTimeout(() => {
+                    refreshAvailability();
+                    
+                    if (calendarSourceCard) {
                         openModal(calendarSourceCard);
-                    }, 300);
-                }
+                    }
+                }, 100);
             });
             return dayButton;
         });
@@ -560,7 +566,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const isAircon = choice === 'with';
 
         if (multiAirconName) multiAirconName.textContent = card.dataset.name || 'Amenity name';
-        if (multiAirconDate) multiAirconDate.textContent = dateInput.value;
+        
+        // Ensure date is properly formatted and displayed
+        if (multiAirconDate && dateInput && dateInput.value) {
+            const dateObj = new Date(dateInput.value);
+            const formattedDate = dateObj.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            multiAirconDate.textContent = formattedDate;
+        } else if (multiAirconDate) {
+            multiAirconDate.textContent = 'Select a date';
+        }
+        
         if (multiAirconSlot) multiAirconSlot.textContent = selectedSlot;
         if (multiAirconCapacity) multiAirconCapacity.textContent = `${card.dataset.minCapacity}–${card.dataset.maxCapacity} guests`;
         if (multiAirconPriceValue) multiAirconPriceValue.textContent = `₱${selectedPrice.toFixed(2)}`;
@@ -711,7 +731,20 @@ document.addEventListener('DOMContentLoaded', () => {
             modalName.textContent = card.dataset.name;
         }
         
-        modalDate.textContent = dateInput.value;
+        // Ensure date is properly formatted and displayed
+        if (dateInput && dateInput.value) {
+            const dateObj = new Date(dateInput.value);
+            const formattedDate = dateObj.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            modalDate.textContent = formattedDate;
+        } else {
+            modalDate.textContent = 'Select a date';
+        }
+        
         modalSlot.textContent = selectedSlot;
         modalCapacity.textContent = `${card.dataset.minCapacity}–${card.dataset.maxCapacity} guests`;
 
