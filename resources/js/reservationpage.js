@@ -381,6 +381,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     dateInput.value = isoDate;
                 }
                 updateReservationDay();
+                
+                // Update the main selected slot to match the calendar slot
+                selectedSlot = calendarSlot;
+                slotButtons.forEach(button => {
+                    button.classList.toggle('is-active', button.dataset.slot === selectedSlot);
+                });
+                
                 closeAvailabilityModal();
                 
                 // Refresh availability after a short delay to ensure date is set

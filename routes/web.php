@@ -122,7 +122,7 @@ Route::get('/reservation/availability', function (Request $request) {
 
     $occupiedAmenityIds = Reservation::query()
         ->whereDate('reservation_date', $date)
-        ->whereNotIn('status', ['Cancelled'])
+        ->whereNotIn('status', ['Cancelled', 'Checked Out'])
         ->whereHas('reservationAmenities', function ($query) use ($pricingTypes): void {
             $query->whereIn('pricing_type', $pricingTypes);
         })
@@ -153,29 +153,39 @@ Route::get('/reservation/availability/calendar', function (Request $request) {
         ]);
     }
 
-    $pricingTypes = $slot === 'Nighttime'
-        ? ['Nighttime', 'Nighttime Aircon']
-        : ['Daytime', 'Daytime Aircon'];
-
     // Use today's date in the application's timezone to avoid offset issues
     $today = \Carbon\Carbon::today()->startOfDay();
     $availability = [];
 
     for ($i = 0; $i < 30; $i++) {
         $date = $today->copy()->addDays($i)->toDateString();
-        $isBooked = Reservation::query()
+        
+        // Check daytime availability separately
+        $daytimePricingTypes = ['Daytime', 'Daytime Aircon'];
+        $isDaytimeBooked = Reservation::query()
             ->whereDate('reservation_date', $date)
             ->whereNotIn('status', ['Cancelled', 'Checked Out'])
-            ->whereHas('reservationAmenities', function ($query) use ($amenityId, $pricingTypes): void {
+            ->whereHas('reservationAmenities', function ($query) use ($amenityId, $daytimePricingTypes): void {
                 $query->where('amenity_id', $amenityId)
-                    ->whereIn('pricing_type', $pricingTypes);
+                    ->whereIn('pricing_type', $daytimePricingTypes);
+            })
+            ->exists();
+
+        // Check nighttime availability separately
+        $nighttimePricingTypes = ['Nighttime', 'Nighttime Aircon'];
+        $isNighttimeBooked = Reservation::query()
+            ->whereDate('reservation_date', $date)
+            ->whereNotIn('status', ['Cancelled', 'Checked Out'])
+            ->whereHas('reservationAmenities', function ($query) use ($amenityId, $nighttimePricingTypes): void {
+                $query->where('amenity_id', $amenityId)
+                    ->whereIn('pricing_type', $nighttimePricingTypes);
             })
             ->exists();
 
         $availability[] = [
             'date' => $date,
-            'daytime' => $slot === 'Daytime' ? ! $isBooked : null,
-            'nighttime' => $slot === 'Nighttime' ? ! $isBooked : null,
+            'daytime' => ! $isDaytimeBooked,
+            'nighttime' => ! $isNighttimeBooked,
         ];
     }
 
@@ -243,7 +253,7 @@ Route::post('/reservation/prototype', function (Request $request) {
         ? $data['amenities']
         : [[
             'amenity_id' => $data['amenity_id'] ?? null,
-            'pricing_type' => $data['pricing_type'] ?? ($data['slot'] ?? 'Daytime'),
+            'pricing_type' => $data['pricing_type'] ?? $data['slot'] ?? 'Daytime',
             'price_at_booking' => $data['price_at_booking'] ?? 0,
         ]];
 
