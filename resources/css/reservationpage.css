@@ -1372,6 +1372,103 @@ html {
     background: rgba(0, 0, 0, 0.15);
 }
 
+/* ── Success Modal ── */
+.rp-modal--success {
+    z-index: 130;
+}
+
+.rp-modal__panel--success {
+    max-width: 42rem;
+    text-align: center;
+    padding: 2rem 2.5rem;
+    background: linear-gradient(135deg, rgba(11, 36, 24, 0.98) 0%, rgba(26, 61, 42, 0.98) 100%);
+    border: 2px solid var(--rp-gold);
+    box-shadow: 0 20px 60px rgba(200, 164, 93, 0.3), 0 0 0 4px rgba(200, 164, 93, 0.15);
+}
+
+.rp-modal__success-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--rp-gold) 0%, var(--rp-gold-light) 100%);
+    color: var(--rp-green-dark);
+    box-shadow: 0 8px 24px rgba(200, 164, 93, 0.4);
+    animation: rp-success-pulse 2s ease-in-out infinite;
+}
+
+@keyframes rp-success-pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 8px 24px rgba(200, 164, 93, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 12px 32px rgba(200, 164, 93, 0.5);
+    }
+}
+
+.rp-modal__success-content h2 {
+    margin: 0 0 1.25rem;
+    font-family: var(--rp-font-display);
+    font-size: 1.75rem;
+    color: var(--rp-gold);
+    font-weight: 700;
+}
+
+.rp-modal__success-details {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.rp-modal__success-notice {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background: rgba(200, 164, 93, 0.15);
+    border: 1px solid rgba(200, 164, 93, 0.4);
+    color: #fff;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+}
+
+.rp-modal__success-notice strong {
+    color: var(--rp-gold);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 0.35rem;
+}
+
+.rp-modal__success-sub {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.rp-modal__success-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.rp-booking-form__button--primary {
+    background: var(--rp-gold);
+    color: var(--rp-green-dark);
+    padding: 0.875rem 2rem;
+    font-size: 0.875rem;
+    letter-spacing: 0.06em;
+    box-shadow: 0 4px 16px rgba(200, 164, 93, 0.35);
+}
+
+.rp-booking-form__button--primary:hover {
+    background: var(--rp-gold-light);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(200, 164, 93, 0.45);
+}
+
 /* ── Footer ── */
 .rp-footer {
     background: rgba(0, 26, 17, 0.85);
@@ -1381,6 +1478,17 @@ html {
     text-align: center;
     font-size: 0.8125rem;
     border-top: 1px solid rgba(200, 164, 93, 0.2);
+    position: relative;
+    z-index: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* Hide footer when any modal is open */
+.rp-modal.is-open ~ .rp-footer,
+.rp-modal.is-open + .rp-footer,
+body:has(.rp-modal.is-open) .rp-footer {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .rp-footer strong {

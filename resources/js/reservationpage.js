@@ -1029,6 +1029,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok && result.success) {
                 bookingNotice.textContent = 'Prototype reservation saved and marked partially paid.';
                 bookingForm.reset();
+                
+                // Show success modal
+                const successModal = document.getElementById('reservationSuccessModal');
+                if (successModal) {
+                    successModal.classList.add('is-open');
+                    successModal.setAttribute('aria-hidden', 'false');
+                    updateOverlayScrollLock();
+                }
             } else {
                 bookingNotice.textContent = result.message || 'Reservation could not be saved.';
             }
@@ -1118,5 +1126,36 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal();
         }
     });
+
+    // Success modal functionality
+    const successModal = document.getElementById('reservationSuccessModal');
+    const successConfirmBtn = document.getElementById('successConfirmBtn');
+    const successCloseButtons = document.querySelectorAll('[data-close-success-modal]');
+
+    const closeSuccessModal = () => {
+        if (successModal) {
+            successModal.classList.remove('is-open');
+            successModal.setAttribute('aria-hidden', 'true');
+            updateOverlayScrollLock();
+            // Refresh page after closing success modal
+            window.location.reload();
+        }
+    };
+
+    if (successConfirmBtn) {
+        successConfirmBtn.addEventListener('click', closeSuccessModal);
+    }
+
+    successCloseButtons.forEach(button => {
+        button.addEventListener('click', closeSuccessModal);
+    });
+
+    if (successModal) {
+        successModal.addEventListener('click', (event) => {
+            if (event.target === successModal) {
+                closeSuccessModal();
+            }
+        });
+    }
 });
     

@@ -335,6 +335,29 @@
                 </div>
             </div>
         </div>
+
+        <div class="rp-modal rp-modal--success" id="reservationSuccessModal" aria-hidden="true">
+            <div class="rp-modal__backdrop" data-close-success-modal></div>
+            <div class="rp-modal__panel rp-modal__panel--success">
+                <div class="rp-modal__success-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="rp-modal__success-content">
+                    <h2>Reservation Confirmed!</h2>
+                    <div class="rp-modal__success-details">
+                        <p class="rp-modal__success-notice">
+                            <strong>Important:</strong> A QR code has been sent to your email address. Please bring this QR code on your reservation day and scan it at the check-in counter.
+                        </p>
+                        <p class="rp-modal__success-sub">Your booking is confirmed and partially paid. The remaining balance can be settled upon check-in.</p>
+                    </div>
+                    <div class="rp-modal__success-actions">
+                        <button type="button" id="successConfirmBtn" class="rp-booking-form__button rp-booking-form__button--primary">Got it!</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <footer class="rp-footer">
