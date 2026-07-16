@@ -23,7 +23,9 @@ return new class extends Migration
                 'Daytime',
                 'Nighttime',
                 'Daytime Aircon',
-                'Nighttime Aircon'
+                'Nighttime Aircon',
+                'DayNight Time',
+                'DayNight Time Aircon'
             ]);
 
             // Snapshot of the selected price

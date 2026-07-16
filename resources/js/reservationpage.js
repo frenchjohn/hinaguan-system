@@ -362,7 +362,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const isoDate = date.getFullYear() + '-' + 
                 String(date.getMonth() + 1).padStart(2, '0') + '-' + 
                 String(date.getDate()).padStart(2, '0');
-            const slotKey = calendarSlot.toLowerCase();
+            
+            // Determine the slot key to check in availability data
+            let slotKey = calendarSlot.toLowerCase();
+            if (slotKey === 'daynight time') {
+                slotKey = 'daynight';
+            }
+            
             const isAvailable = calendarAvailability.some(
                 (entry) => entry.date === isoDate && entry[slotKey] === true
             );
@@ -485,12 +491,21 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderBookingSelection = (card, choice) => {
-        const basePrice = selectedSlot === 'Nighttime'
-            ? Number(card.dataset.nighttimePrice)
-            : Number(card.dataset.daytimePrice);
-        const airconPrice = selectedSlot === 'Nighttime'
-            ? Number(card.dataset.nighttimeAirconPrice)
-            : Number(card.dataset.daytimeAirconPrice);
+        let basePrice, airconPrice;
+        
+        if (selectedSlot === 'Nighttime') {
+            basePrice = Number(card.dataset.nighttimePrice);
+            airconPrice = Number(card.dataset.nighttimeAirconPrice);
+        } else if (selectedSlot === 'DayNight Time') {
+            // For DayNight Time, combine daytime and nighttime prices
+            basePrice = Number(card.dataset.daytimePrice) + Number(card.dataset.nighttimePrice);
+            airconPrice = Number(card.dataset.daytimeAirconPrice) + Number(card.dataset.nighttimeAirconPrice);
+        } else {
+            // Daytime (default)
+            basePrice = Number(card.dataset.daytimePrice);
+            airconPrice = Number(card.dataset.daytimeAirconPrice);
+        }
+        
         const selectedPrice = choice === 'with' ? airconPrice : basePrice;
         const isAircon = choice === 'with';
 
@@ -563,12 +578,21 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderMultiAirconSelection = (card, choice) => {
-        const basePrice = selectedSlot === 'Nighttime'
-            ? Number(card.dataset.nighttimePrice)
-            : Number(card.dataset.daytimePrice);
-        const airconPrice = selectedSlot === 'Nighttime'
-            ? Number(card.dataset.nighttimeAirconPrice)
-            : Number(card.dataset.daytimeAirconPrice);
+        let basePrice, airconPrice;
+        
+        if (selectedSlot === 'Nighttime') {
+            basePrice = Number(card.dataset.nighttimePrice);
+            airconPrice = Number(card.dataset.nighttimeAirconPrice);
+        } else if (selectedSlot === 'DayNight Time') {
+            // For DayNight Time, combine daytime and nighttime prices
+            basePrice = Number(card.dataset.daytimePrice) + Number(card.dataset.nighttimePrice);
+            airconPrice = Number(card.dataset.daytimeAirconPrice) + Number(card.dataset.nighttimeAirconPrice);
+        } else {
+            // Daytime (default)
+            basePrice = Number(card.dataset.daytimePrice);
+            airconPrice = Number(card.dataset.daytimeAirconPrice);
+        }
+        
         const selectedPrice = choice === 'with' ? airconPrice : basePrice;
         const isAircon = choice === 'with';
 
@@ -663,12 +687,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const getAmenityPrice = (card, choice) => {
-        const basePrice = selectedSlot === 'Nighttime'
-            ? Number(card.dataset.nighttimePrice)
-            : Number(card.dataset.daytimePrice);
-        const airconPrice = selectedSlot === 'Nighttime'
-            ? Number(card.dataset.nighttimeAirconPrice)
-            : Number(card.dataset.daytimeAirconPrice);
+        let basePrice, airconPrice;
+        
+        if (selectedSlot === 'Nighttime') {
+            basePrice = Number(card.dataset.nighttimePrice);
+            airconPrice = Number(card.dataset.nighttimeAirconPrice);
+        } else if (selectedSlot === 'DayNight Time') {
+            // For DayNight Time, combine daytime and nighttime prices
+            basePrice = Number(card.dataset.daytimePrice) + Number(card.dataset.nighttimePrice);
+            airconPrice = Number(card.dataset.daytimeAirconPrice) + Number(card.dataset.nighttimeAirconPrice);
+        } else {
+            // Daytime (default)
+            basePrice = Number(card.dataset.daytimePrice);
+            airconPrice = Number(card.dataset.daytimeAirconPrice);
+        }
 
         return choice === 'with' ? airconPrice : basePrice;
     };

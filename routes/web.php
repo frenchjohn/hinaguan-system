@@ -52,7 +52,7 @@ Route::get('/amenities', function () {
                 ->whereNotIn('status', ['Cancelled', 'Checked Out'])
                 ->whereHas('reservationAmenities', function ($query) use ($amenity): void {
                     $query->where('amenity_id', $amenity->id)
-                        ->whereIn('pricing_type', ['Daytime', 'Daytime Aircon']);
+                        ->whereIn('pricing_type', ['Daytime', 'Daytime Aircon', 'DayNight Time', 'DayNight Time Aircon']);
                 })
                 ->exists();
             $hasNighttime = ! Reservation::query()
@@ -60,7 +60,7 @@ Route::get('/amenities', function () {
                 ->whereNotIn('status', ['Cancelled', 'Checked Out'])
                 ->whereHas('reservationAmenities', function ($query) use ($amenity): void {
                     $query->where('amenity_id', $amenity->id)
-                        ->whereIn('pricing_type', ['Nighttime', 'Nighttime Aircon']);
+                        ->whereIn('pricing_type', ['Nighttime', 'Nighttime Aircon', 'DayNight Time', 'DayNight Time Aircon']);
                 })
                 ->exists();
 
@@ -116,15 +116,26 @@ Route::get('/reservation/availability', function (Request $request) {
         ]);
     }
 
-    $pricingTypes = $slot === 'Nighttime'
-        ? ['Nighttime', 'Nighttime Aircon']
-        : ['Daytime', 'Daytime Aircon'];
+    // Determine pricing types based on slot
+    if ($slot === 'Nighttime') {
+        $pricingTypes = ['Nighttime', 'Nighttime Aircon'];
+        // Also exclude DayNight Time bookings since they cover nighttime
+        $excludedTypes = ['Nighttime', 'Nighttime Aircon', 'DayNight Time', 'DayNight Time Aircon'];
+    } elseif ($slot === 'DayNight Time') {
+        // DayNight Time conflicts with ALL booking types since it covers the entire day
+        $excludedTypes = ['Daytime', 'Daytime Aircon', 'Nighttime', 'Nighttime Aircon', 'DayNight Time', 'DayNight Time Aircon'];
+    } else {
+        // Daytime (default)
+        $pricingTypes = ['Daytime', 'Daytime Aircon'];
+        // Also exclude DayNight Time bookings since they cover daytime
+        $excludedTypes = ['Daytime', 'Daytime Aircon', 'DayNight Time', 'DayNight Time Aircon'];
+    }
 
     $occupiedAmenityIds = Reservation::query()
         ->whereDate('reservation_date', $date)
         ->whereNotIn('status', ['Cancelled', 'Checked Out'])
-        ->whereHas('reservationAmenities', function ($query) use ($pricingTypes): void {
-            $query->whereIn('pricing_type', $pricingTypes);
+        ->whereHas('reservationAmenities', function ($query) use ($excludedTypes): void {
+            $query->whereIn('pricing_type', $excludedTypes);
         })
         ->with('reservationAmenities')
         ->get()
@@ -161,7 +172,8 @@ Route::get('/reservation/availability/calendar', function (Request $request) {
         $date = $today->copy()->addDays($i)->toDateString();
         
         // Check daytime availability separately
-        $daytimePricingTypes = ['Daytime', 'Daytime Aircon'];
+        // For Daytime, check Daytime and DayNight Time bookings
+        $daytimePricingTypes = ['Daytime', 'Daytime Aircon', 'DayNight Time', 'DayNight Time Aircon'];
         $isDaytimeBooked = Reservation::query()
             ->whereDate('reservation_date', $date)
             ->whereNotIn('status', ['Cancelled', 'Checked Out'])
@@ -172,7 +184,8 @@ Route::get('/reservation/availability/calendar', function (Request $request) {
             ->exists();
 
         // Check nighttime availability separately
-        $nighttimePricingTypes = ['Nighttime', 'Nighttime Aircon'];
+        // For Nighttime, check Nighttime and DayNight Time bookings
+        $nighttimePricingTypes = ['Nighttime', 'Nighttime Aircon', 'DayNight Time', 'DayNight Time Aircon'];
         $isNighttimeBooked = Reservation::query()
             ->whereDate('reservation_date', $date)
             ->whereNotIn('status', ['Cancelled', 'Checked Out'])
@@ -182,10 +195,14 @@ Route::get('/reservation/availability/calendar', function (Request $request) {
             })
             ->exists();
 
+        // For DayNight Time, check if both daytime and nighttime are available
+        $isDayNightAvailable = ! $isDaytimeBooked && ! $isNighttimeBooked;
+        
         $availability[] = [
             'date' => $date,
             'daytime' => ! $isDaytimeBooked,
             'nighttime' => ! $isNighttimeBooked,
+            'daynight' => $isDayNightAvailable,
         ];
     }
 

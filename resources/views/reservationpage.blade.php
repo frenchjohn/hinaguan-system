@@ -124,6 +124,7 @@
             <div class="rp-slotbar__buttons">
                 <button type="button" class="rp-slot-btn is-active" data-slot="Daytime">Daytime</button>
                 <button type="button" class="rp-slot-btn" data-slot="Nighttime">Nighttime</button>
+                <button type="button" class="rp-slot-btn" data-slot="DayNight Time">DayNight Time</button>
             </div>
         </section>
 
@@ -297,6 +298,7 @@
                     <div class="rp-modal__slot-toggle" role="tablist" aria-label="Booking slot">
                         <button type="button" class="rp-slot-btn is-active" data-slot-toggle="Daytime">Daytime</button>
                         <button type="button" class="rp-slot-btn" data-slot-toggle="Nighttime">Nighttime</button>
+                        <button type="button" class="rp-slot-btn" data-slot-toggle="DayNight Time">DayNight Time</button>
                     </div>
                     <div class="rp-calendar-wrap">
                         <div class="rp-calendar" id="availabilityCalendar" role="grid" aria-label="Available dates"></div>
