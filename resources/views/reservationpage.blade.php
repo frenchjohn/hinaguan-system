@@ -214,48 +214,28 @@
 
                     <div class="rp-date-card__picker">
 
-                        <input id="reservation_date" name="reservation_date" type="date" min="{{ now()->toDateString() }}" value="" data-min-date="{{ now()->toDateString() }}" placeholder="Pick a date">
+                        <input id="reservation_date" name="reservation_date" type="hidden" value="" data-min-date="{{ now()->toDateString() }}">
 
-                        <span id="reservationDay" class="rp-date-card__day">Select date</span>
+                        <button type="button" id="reservationDateTrigger" class="rp-date-card__day">Select date</button>
 
                     </div>
 
-                    <div class="rp-date-card__weather" id="reservationWeatherPreview">
-
-                        @if($weatherPreview)
-
-                            <div class="rp-weather-preview__wrap">
-
-                                @if($weatherPreview['icon'])
-
-                                    <img src="{{ $weatherPreview['icon'] }}" alt="{{ $weatherPreview['condition'] }}" class="rp-weather-preview__icon">
-
-                                @endif
-
-                                <div class="rp-weather-preview__content">
-
-                                    <strong>{{ $weatherPreview['condition'] }}</strong>
-
-                                    @if(($weatherPreview['is_current'] ?? false) && isset($weatherPreview['temp_c']))
-
-                                        <span>Now {{ round($weatherPreview['temp_c']) }}°C · Feels like {{ round($weatherPreview['feelslike_c']) }}°C</span>
-
-                                    @else
-
-                                        <span>High {{ round($weatherPreview['max_temp_c']) }}°C · Low {{ round($weatherPreview['min_temp_c']) }}°C</span>
-
-                                    @endif
-
-                                </div>
-
+                    <div class="rp-date-card__weather" id="reservationWeatherPreview" hidden>
+                        <div class="rp-weather-preview__wrap">
+                            <img src="" alt="" class="rp-weather-preview__icon" id="weatherIcon" hidden>
+                            <div class="rp-weather-preview__content">
+                                <strong id="weatherCondition"></strong>
+                                <span id="weatherTemp"></span>
                             </div>
-
-                        @else
-
-                            <p class="rp-weather-preview__empty">No info about the weather.</p>
-
-                        @endif
-
+                        </div>
+                        <p class="rp-weather-preview__empty" id="weatherEmpty"></p>
+                        <div class="rp-weather-preview__skeleton" id="weatherSkeleton">
+                            <div class="rp-weather-preview__skeleton-icon"></div>
+                            <div class="rp-weather-preview__skeleton-content">
+                                <div class="rp-weather-preview__skeleton-text"></div>
+                                <div class="rp-weather-preview__skeleton-text rp-weather-preview__skeleton-text--small"></div>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -272,11 +252,11 @@
 
             <div class="rp-slotbar__buttons">
 
-                <button type="button" class="rp-slot-btn is-active" data-slot="Daytime">Daytime</button>
+                <button type="button" class="rp-slot-btn is-active" data-slot="Daytime" id="slotDaytime">Daytime</button>
 
-                <button type="button" class="rp-slot-btn" data-slot="Nighttime">Nighttime</button>
+                <button type="button" class="rp-slot-btn" data-slot="Nighttime" id="slotNighttime">Nighttime</button>
 
-                <button type="button" class="rp-slot-btn" data-slot="DayNight Time">DayNight Time</button>
+                <button type="button" class="rp-slot-btn" data-slot="DayNight Time" id="slotDayNight">DayNight Time</button>
 
             </div>
 
@@ -621,6 +601,46 @@
                         <button type="button" class="rp-modal__btn rp-modal__btn--secondary" data-close-cancel-confirm>No</button>
                         <button type="button" class="rp-modal__btn rp-modal__btn--primary" id="confirmCancelBtn">Yes, cancel</button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="rp-modal" id="datePickerModal" aria-hidden="true">
+            <div class="rp-modal__backdrop" data-close-date-picker></div>
+            <div class="rp-modal__panel rp-modal__panel--calendar">
+                <div class="rp-modal__header">
+                    <h2>Select reservation date</h2>
+                    <button type="button" class="rp-modal__close" data-close-date-picker>&times;</button>
+                </div>
+                <div class="rp-modal__content">
+                    <div class="rp-calendar-controls">
+                        <select id="datePickerMonth" class="rp-calendar-controls__select">
+                            <option value="0">January</option>
+                            <option value="1">February</option>
+                            <option value="2">March</option>
+                            <option value="3">April</option>
+                            <option value="4">May</option>
+                            <option value="5">June</option>
+                            <option value="6">July</option>
+                            <option value="7">August</option>
+                            <option value="8">September</option>
+                            <option value="9">October</option>
+                            <option value="10">November</option>
+                            <option value="11">December</option>
+                        </select>
+                        <select id="datePickerYear" class="rp-calendar-controls__select"></select>
+                    </div>
+                    <div class="rp-slotbar rp-slotbar--modal">
+                        <span class="rp-slotbar__label">Booking type</span>
+                        <div class="rp-slotbar__buttons">
+                            <button type="button" class="rp-slot-btn is-active" data-slot="Daytime" id="modalSlotDaytime">Daytime</button>
+                            <button type="button" class="rp-slot-btn" data-slot="Nighttime" id="modalSlotNighttime">Nighttime</button>
+                            <button type="button" class="rp-slot-btn" data-slot="DayNight Time" id="modalSlotDayNight">DayNight Time</button>
+                        </div>
+                    </div>
+                    <div class="rp-calendar" id="datePickerDays"></div>
                 </div>
             </div>
         </div>

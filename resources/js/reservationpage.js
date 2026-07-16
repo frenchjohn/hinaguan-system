@@ -150,6 +150,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const gridSkeleton = document.getElementById('gridSkeleton');
 
+    const datePickerModal = document.getElementById('datePickerModal');
+
+    const reservationDateTrigger = document.getElementById('reservationDateTrigger');
+
     const modalClose = document.querySelectorAll('[data-close-modal]');
 
     const multiSelectionToggle = document.getElementById('multiSelectionToggle');
@@ -430,13 +434,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             grid.classList.toggle('is-busy', loading);
 
+            grid.hidden = loading;
+
         }
 
-
+        if (gridSkeleton) {
+            gridSkeleton.hidden = !loading;
+        }
 
         if (availabilityLoading) {
 
-            availabilityLoading.hidden = !loading;
+            availabilityLoading.hidden = true;
 
         }
 
@@ -898,6 +906,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (slotKey === 'daynight time' || slotKey === 'daynight') {
                     // For Daynight Time, both daytime and nighttime must be available
                     isAvailable = entry.daytime === true && entry.nighttime === true;
+                }
+            }
+
+            // Disable past dates
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const isPast = date < today;
+            const isToday = date.getTime() === today.getTime();
+
+            if (isPast) {
+                isAvailable = false;
+            }
+
+            // Disable today for daytime and daynight slots (will be handled by time-based logic below)
+            if (isToday && (slotKey === 'daytime' || slotKey === 'daynight time' || slotKey === 'daynight')) {
+                // Time-based availability check
+                const currentHour = new Date().getHours();
+
+                if (slotKey === 'daytime') {
+                    // Daytime available only 1am-4am on today
+                    isAvailable = isAvailable && (currentHour >= 1 && currentHour < 4);
+                } else if (slotKey === 'nighttime') {
+                    // Nighttime available only 1am-6pm on today
+                    isAvailable = isAvailable && (currentHour >= 1 && currentHour < 18);
+                } else if (slotKey === 'daynight time' || slotKey === 'daynight') {
+                    // Daynight available only if both daytime and nighttime are available based on time
+                    const daytimeAvailable = (currentHour >= 1 && currentHour < 4);
+                    const nighttimeAvailable = (currentHour >= 1 && currentHour < 18);
+                    isAvailable = isAvailable && daytimeAvailable && nighttimeAvailable;
                 }
             }
 
@@ -1895,6 +1932,330 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+    // Date picker modal logic
+    const datePickerMonth = document.getElementById('datePickerMonth');
+    const datePickerYear = document.getElementById('datePickerYear');
+    const datePickerDays = document.getElementById('datePickerDays');
+
+    const openDatePickerModal = () => {
+        if (!datePickerModal) return;
+
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+
+        // Set current month/year
+        if (datePickerMonth) datePickerMonth.value = currentMonth;
+
+        // Populate year dropdown (current year to 2 years ahead)
+        if (datePickerYear) {
+            datePickerYear.innerHTML = '';
+            for (let year = currentYear; year <= currentYear + 2; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                datePickerYear.appendChild(option);
+            }
+            datePickerYear.value = currentYear;
+        }
+
+        renderDatePickerDays();
+
+        datePickerModal.classList.add('is-open');
+        datePickerModal.setAttribute('aria-hidden', 'false');
+        updateOverlayScrollLock();
+    };
+
+    const closeDatePickerModal = () => {
+        if (!datePickerModal) return;
+        datePickerModal.classList.remove('is-open');
+        datePickerModal.setAttribute('aria-hidden', 'true');
+        updateOverlayScrollLock();
+    };
+
+    const renderDatePickerDays = () => {
+        if (!datePickerDays || !datePickerMonth || !datePickerYear) return;
+
+        const selectedMonth = parseInt(datePickerMonth.value);
+        const selectedYear = parseInt(datePickerYear.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+        const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1).getDay();
+
+        datePickerDays.innerHTML = '';
+
+        // Add weekday labels
+        ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach((weekday) => {
+            const label = document.createElement('span');
+            label.className = 'rp-calendar__weekday';
+            label.textContent = weekday;
+            datePickerDays.appendChild(label);
+        });
+
+        // Add empty cells for days before the first day of the month
+        for (let i = 0; i < firstDayOfMonth; i++) {
+            const emptyCell = document.createElement('button');
+            emptyCell.type = 'button';
+            emptyCell.className = 'rp-calendar__day rp-calendar__day--empty';
+            emptyCell.disabled = true;
+            datePickerDays.appendChild(emptyCell);
+        }
+
+        // Update modal slot buttons visibility based on time
+        updateModalSlotButtonsForDate();
+
+        // Add day buttons
+        const days = Array.from({ length: daysInMonth }, (_, index) => {
+            const date = new Date(selectedYear, selectedMonth, index + 1);
+            const isoDate = date.getFullYear() + '-' +
+                String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                String(date.getDate()).padStart(2, '0');
+
+            const isPast = date < today;
+            const isToday = date.getTime() === today.getTime();
+
+            // For today, check time-based availability based on selected modal slot
+            let isAvailable = !isPast;
+            if (isToday) {
+                const currentHour = new Date().getHours();
+                const modalSlotDaytime = document.getElementById('modalSlotDaytime');
+                const modalSlotNighttime = document.getElementById('modalSlotNighttime');
+                const modalSlotDayNight = document.getElementById('modalSlotDayNight');
+
+                let currentModalSlot = 'Daytime';
+                if (modalSlotDaytime && modalSlotDaytime.classList.contains('is-active')) {
+                    currentModalSlot = 'Daytime';
+                } else if (modalSlotNighttime && modalSlotNighttime.classList.contains('is-active')) {
+                    currentModalSlot = 'Nighttime';
+                } else if (modalSlotDayNight && modalSlotDayNight.classList.contains('is-active')) {
+                    currentModalSlot = 'DayNight Time';
+                }
+
+                if (currentModalSlot === 'Daytime') {
+                    isAvailable = (currentHour >= 1 && currentHour < 4);
+                } else if (currentModalSlot === 'Nighttime') {
+                    isAvailable = (currentHour >= 1 && currentHour < 18);
+                } else if (currentModalSlot === 'DayNight Time') {
+                    const daytimeAvailable = (currentHour >= 1 && currentHour < 4);
+                    const nighttimeAvailable = (currentHour >= 1 && currentHour < 18);
+                    isAvailable = daytimeAvailable && nighttimeAvailable;
+                }
+            }
+
+            const dayButton = document.createElement('button');
+            dayButton.type = 'button';
+            dayButton.className = `rp-calendar__day ${isAvailable ? 'is-available' : 'is-disabled'}`;
+            dayButton.disabled = !isAvailable;
+            dayButton.innerHTML = `
+                <span class="rp-calendar__day-num">${date.getDate()}</span>
+                <span class="rp-calendar__day-month">${date.toLocaleDateString('en', { month: 'short' })}</span>
+            `;
+
+            if (!isPast) {
+                dayButton.addEventListener('click', () => {
+                    if (dateInput) {
+                        dateInput.value = isoDate;
+                    }
+                    if (reservationDateTrigger) {
+                        const formattedDate = date.toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+                        reservationDateTrigger.textContent = formattedDate;
+                    }
+
+                    // Set the main slot to match the modal slot
+                    const modalSlotDaytime = document.getElementById('modalSlotDaytime');
+                    const modalSlotNighttime = document.getElementById('modalSlotNighttime');
+                    const modalSlotDayNight = document.getElementById('modalSlotDayNight');
+
+                    let selectedModalSlot = 'Daytime';
+                    if (modalSlotDaytime && modalSlotDaytime.classList.contains('is-active')) {
+                        selectedModalSlot = 'Daytime';
+                    } else if (modalSlotNighttime && modalSlotNighttime.classList.contains('is-active')) {
+                        selectedModalSlot = 'Nighttime';
+                    } else if (modalSlotDayNight && modalSlotDayNight.classList.contains('is-active')) {
+                        selectedModalSlot = 'DayNight Time';
+                    }
+
+                    setActiveSlot(selectedModalSlot);
+
+                    closeDatePickerModal();
+                    updateReservationDay();
+                    refreshAvailability();
+                    fetchWeatherForDate(isoDate);
+                });
+            }
+
+            return dayButton;
+        });
+
+        days.forEach(day => datePickerDays.appendChild(day));
+    };
+
+    // Event listeners for date picker
+    if (reservationDateTrigger) {
+        reservationDateTrigger.addEventListener('click', openDatePickerModal);
+    }
+
+    if (datePickerMonth) {
+        datePickerMonth.addEventListener('change', renderDatePickerDays);
+    }
+
+    if (datePickerYear) {
+        datePickerYear.addEventListener('change', renderDatePickerDays);
+    }
+
+    // Event listeners for modal slot buttons
+    const modalSlotDaytime = document.getElementById('modalSlotDaytime');
+    const modalSlotNighttime = document.getElementById('modalSlotNighttime');
+    const modalSlotDayNight = document.getElementById('modalSlotDayNight');
+
+    if (modalSlotDaytime) {
+        modalSlotDaytime.addEventListener('click', () => setActiveModalSlot('Daytime'));
+    }
+
+    if (modalSlotNighttime) {
+        modalSlotNighttime.addEventListener('click', () => setActiveModalSlot('Nighttime'));
+    }
+
+    if (modalSlotDayNight) {
+        modalSlotDayNight.addEventListener('click', () => setActiveModalSlot('DayNight Time'));
+    }
+
+    const datePickerCloseButtons = document.querySelectorAll('[data-close-date-picker]');
+    datePickerCloseButtons.forEach(button => {
+        button.addEventListener('click', closeDatePickerModal);
+    });
+
+    if (datePickerModal) {
+        datePickerModal.addEventListener('click', (event) => {
+            if (event.target === datePickerModal) {
+                closeDatePickerModal();
+            }
+        });
+    }
+
+
+
+    // Update modal slot buttons based on time
+    const updateModalSlotButtonsForDate = () => {
+        const modalSlotDaytime = document.getElementById('modalSlotDaytime');
+        const modalSlotNighttime = document.getElementById('modalSlotNighttime');
+        const modalSlotDayNight = document.getElementById('modalSlotDayNight');
+
+        if (!modalSlotDaytime || !modalSlotNighttime || !modalSlotDayNight) return;
+
+        // Always show all buttons in modal - time restrictions apply to calendar days only
+        modalSlotDaytime.hidden = false;
+        modalSlotNighttime.hidden = false;
+        modalSlotDayNight.hidden = false;
+    };
+
+    const setActiveModalSlot = (slot) => {
+        const modalSlotDaytime = document.getElementById('modalSlotDaytime');
+        const modalSlotNighttime = document.getElementById('modalSlotNighttime');
+        const modalSlotDayNight = document.getElementById('modalSlotDayNight');
+
+        if (modalSlotDaytime) modalSlotDaytime.classList.toggle('is-active', slot === 'Daytime');
+        if (modalSlotNighttime) modalSlotNighttime.classList.toggle('is-active', slot === 'Nighttime');
+        if (modalSlotDayNight) modalSlotDayNight.classList.toggle('is-active', slot === 'DayNight Time');
+
+        // Re-render calendar with new slot selection
+        renderDatePickerDays();
+    };
+
+    // Update slot buttons based on selected date
+    const updateSlotButtonsForDate = (date) => {
+        const slotDaytime = document.getElementById('slotDaytime');
+        const slotNighttime = document.getElementById('slotNighttime');
+        const slotDayNight = document.getElementById('slotDayNight');
+
+        if (!slotDaytime || !slotNighttime || !slotDayNight) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const selectedDate = new Date(date);
+        selectedDate.setHours(0, 0, 0, 0);
+
+        const isToday = selectedDate.getTime() === today.getTime();
+
+        if (isToday) {
+            // Hide Daytime and DayNight Time for today
+            slotDaytime.hidden = true;
+            slotDayNight.hidden = true;
+            slotNighttime.hidden = false;
+
+            // If currently selected slot is Daytime or DayNight, switch to Nighttime
+            if (selectedSlot === 'Daytime' || selectedSlot === 'DayNight Time') {
+                setActiveSlot('Nighttime');
+            }
+        } else {
+            // Show all slots for future dates
+            slotDaytime.hidden = false;
+            slotNighttime.hidden = false;
+            slotDayNight.hidden = false;
+        }
+    };
+
+    // Weather fetch function
+    const fetchWeatherForDate = async (date) => {
+        const weatherPreview = document.getElementById('reservationWeatherPreview');
+        const weatherIcon = document.getElementById('weatherIcon');
+        const weatherCondition = document.getElementById('weatherCondition');
+        const weatherTemp = document.getElementById('weatherTemp');
+        const weatherEmpty = document.getElementById('weatherEmpty');
+        const weatherSkeleton = document.getElementById('weatherSkeleton');
+
+        if (!weatherPreview) return;
+
+        // Show skeleton and hide other content
+        weatherPreview.hidden = false;
+        weatherIcon.hidden = true;
+        weatherCondition.textContent = '';
+        weatherTemp.textContent = '';
+        weatherEmpty.hidden = true;
+        if (weatherSkeleton) weatherSkeleton.hidden = false;
+
+        try {
+            const response = await fetch(`/reservation/weather-preview?date=${date}`);
+            const data = await response.json();
+
+            // Hide skeleton
+            if (weatherSkeleton) weatherSkeleton.hidden = true;
+
+            if (data.available) {
+                weatherIcon.src = data.icon || '';
+                weatherIcon.alt = data.condition || '';
+                weatherIcon.hidden = !data.icon;
+                weatherCondition.textContent = data.condition || '';
+                weatherTemp.textContent = `High ${Math.round(data.max_temp_c)}°C · Low ${Math.round(data.min_temp_c)}°C`;
+                weatherEmpty.hidden = true;
+            } else {
+                weatherIcon.hidden = true;
+                weatherCondition.textContent = '';
+                weatherTemp.textContent = '';
+                weatherEmpty.textContent = data.message || 'No weather info yet';
+                weatherEmpty.hidden = false;
+            }
+        } catch (error) {
+            console.error('Error fetching weather:', error);
+            // Hide skeleton
+            if (weatherSkeleton) weatherSkeleton.hidden = true;
+            weatherIcon.hidden = true;
+            weatherCondition.textContent = '';
+            weatherTemp.textContent = '';
+            weatherEmpty.textContent = 'No weather info yet';
+            weatherEmpty.hidden = false;
+        }
+    };
+
+
+
     if (preselectedAmenityId) {
 
         const preselectedCard = cards.find(card => card.dataset.amenityId === preselectedAmenityId);
@@ -1909,6 +2270,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         }
 
+    }
+
+    // Fetch weather if date is preselected
+    if (preselectedDate && dateInput) {
+        dateInput.value = preselectedDate;
+        fetchWeatherForDate(preselectedDate);
     }
 
 
@@ -1989,27 +2356,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             }
 
-            // Show date and slot controls
-
+            // Show date controls only (slot bar is now inside modal)
             if (dateControlsSection) {
 
                 dateControlsSection.hidden = false;
 
             }
 
+            // Keep slot controls hidden since it's now in the modal
             if (slotControlsSection) {
 
-                slotControlsSection.hidden = false;
+                slotControlsSection.hidden = true;
 
             }
 
-            // Trigger date picker
-
-            if (dateInput) {
-
-                dateInput.showPicker ? dateInput.showPicker() : dateInput.focus();
-
-            }
+            // Trigger date picker modal
+            openDatePickerModal();
 
         });
 
