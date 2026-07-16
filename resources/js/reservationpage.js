@@ -146,6 +146,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const modal = document.getElementById('amenityModal');
 
+    const cancelConfirmModal = document.getElementById('cancelConfirmModal');
+
+    const gridSkeleton = document.getElementById('gridSkeleton');
+
     const modalClose = document.querySelectorAll('[data-close-modal]');
 
     const multiSelectionToggle = document.getElementById('multiSelectionToggle');
@@ -1777,18 +1781,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const closeModal = () => {
 
-        modal.classList.remove('is-open');
-
-        modal.setAttribute('aria-hidden', 'true');
-
-        updateOverlayScrollLock();
-
-        if (selectionFloatingBar && multiSelectionEnabled) {
-
-            const count = selectedCards.length;
-
-            selectionFloatingBar.hidden = count === 0;
-
+        // Show confirmation modal instead of directly closing
+        if (cancelConfirmModal) {
+            cancelConfirmModal.classList.add('is-open');
+            cancelConfirmModal.setAttribute('aria-hidden', 'false');
+            updateOverlayScrollLock();
         }
 
     };
@@ -1884,6 +1881,17 @@ document.addEventListener('DOMContentLoaded', () => {
     updateReservationDay();
 
     applyFilters();
+
+
+
+    // Hide skeleton when page is loaded
+    if (gridSkeleton) {
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                gridSkeleton.hidden = true;
+            }, 500);
+        });
+    }
 
 
 
@@ -2448,6 +2456,59 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', closeAvailabilityModal);
 
     });
+
+
+
+    // Cancel confirmation modal handlers
+    const cancelConfirmCloseButtons = document.querySelectorAll('[data-close-cancel-confirm]');
+    const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+
+    const closeCancelConfirmModal = () => {
+        if (cancelConfirmModal) {
+            cancelConfirmModal.classList.remove('is-open');
+            cancelConfirmModal.setAttribute('aria-hidden', 'true');
+            updateOverlayScrollLock();
+        }
+    };
+
+    cancelConfirmCloseButtons.forEach(button => {
+        button.addEventListener('click', closeCancelConfirmModal);
+    });
+
+    if (confirmCancelBtn) {
+        confirmCancelBtn.addEventListener('click', () => {
+            // Close confirmation modal
+            closeCancelConfirmModal();
+
+            // Close amenity modal
+            if (modal) {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+                updateOverlayScrollLock();
+            }
+
+            // Show skeleton for refresh and hide actual grid
+            if (gridSkeleton) {
+                gridSkeleton.hidden = false;
+            }
+            if (grid) {
+                grid.hidden = true;
+            }
+
+            // Refresh the page after a brief delay for UX
+            setTimeout(() => {
+                window.location.reload();
+            }, 300);
+        });
+    }
+
+    if (cancelConfirmModal) {
+        cancelConfirmModal.addEventListener('click', (event) => {
+            if (event.target === cancelConfirmModal) {
+                closeCancelConfirmModal();
+            }
+        });
+    }
 
 
 

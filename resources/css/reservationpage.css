@@ -3128,6 +3128,78 @@ html {
 
 
 
+.rp-modal__actions {
+
+    display: flex;
+
+    gap: 1rem;
+
+    justify-content: center;
+
+    margin-top: 1.5rem;
+
+}
+
+
+
+.rp-modal__btn {
+
+    padding: 0.75rem 1.5rem;
+
+    font-size: 0.875rem;
+
+    font-weight: 600;
+
+    border-radius: 0.5rem;
+
+    border: none;
+
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+
+}
+
+
+
+.rp-modal__btn--primary {
+
+    background: var(--rp-gold);
+
+    color: var(--rp-green-dark);
+
+}
+
+
+
+.rp-modal__btn--primary:hover {
+
+    background: var(--rp-gold-light);
+
+}
+
+
+
+.rp-modal__btn--secondary {
+
+    background: rgba(255, 255, 255, 0.1);
+
+    color: #fff;
+
+    border: 1px solid rgba(255, 255, 255, 0.3);
+
+}
+
+
+
+.rp-modal__btn--secondary:hover {
+
+    background: rgba(255, 255, 255, 0.2);
+
+}
+
+
+
 .rp-booking-form__button--primary {
 
     background: var(--rp-gold);
@@ -3516,10 +3588,91 @@ body:has(.rp-modal.is-open) .rp-footer {
 
         right: 1rem;
 
-        bottom: 1rem;
-
     }
 
+}
+
+
+
+/* ── Skeleton Loading ── */
+
+.rp-grid__skeleton {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+    gap: 1.25rem;
+    animation: fadeIn 0.5s ease;
+}
+
+.rp-card--skeleton {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(200, 164, 93, 0.2);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.rp-card__skeleton-image {
+    width: 100%;
+    height: 12rem;
+    background: linear-gradient(90deg, rgba(200, 164, 93, 0.1) 25%, rgba(200, 164, 93, 0.2) 50%, rgba(200, 164, 93, 0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+.rp-card__skeleton-content {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.rp-card__skeleton-title {
+    height: 1.5rem;
+    width: 80%;
+    background: linear-gradient(90deg, rgba(200, 164, 93, 0.1) 25%, rgba(200, 164, 93, 0.2) 50%, rgba(200, 164, 93, 0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.25rem;
+}
+
+.rp-card__skeleton-meta {
+    height: 1rem;
+    width: 60%;
+    background: linear-gradient(90deg, rgba(200, 164, 93, 0.1) 25%, rgba(200, 164, 93, 0.2) 50%, rgba(200, 164, 93, 0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.25rem;
+}
+
+.rp-card__skeleton-price {
+    height: 1.25rem;
+    width: 40%;
+    background: linear-gradient(90deg, rgba(200, 164, 93, 0.1) 25%, rgba(200, 164, 93, 0.2) 50%, rgba(200, 164, 93, 0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.25rem;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.rp-grid__skeleton[hidden] {
+    display: none;
 }
 
 

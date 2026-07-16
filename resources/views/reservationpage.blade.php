@@ -22,8 +22,6 @@
 
 <body class="antialiased rp-page" style="--rp-page-bg: url('{{ asset('images/background.jpeg') }}')">
 
-
-
     {{-- Site header --}}
 
     <div class="rp-site-header" id="rpSiteHeader">
@@ -334,6 +332,20 @@
 
         <section class="rp-grid" id="reservationGridShell" data-animate="fade-up" data-delay="250">
 
+            {{-- Skeleton loading state --}}
+            <div class="rp-grid__skeleton" id="gridSkeleton">
+                @for($i = 1; $i <= 6; $i++)
+                    <div class="rp-card rp-card--skeleton">
+                        <div class="rp-card__skeleton-image"></div>
+                        <div class="rp-card__skeleton-content">
+                            <div class="rp-card__skeleton-title"></div>
+                            <div class="rp-card__skeleton-meta"></div>
+                            <div class="rp-card__skeleton-price"></div>
+                        </div>
+                    </div>
+                @endfor
+            </div>
+
             <div class="rp-grid__loading" id="availabilityLoading" hidden>
 
                 <div class="rp-grid__loading-spinner" aria-hidden="true"></div>
@@ -592,6 +604,25 @@
 
             </div>
 
+        </div>
+
+
+
+        <div class="rp-modal" id="cancelConfirmModal" aria-hidden="true">
+            <div class="rp-modal__backdrop" data-close-cancel-confirm></div>
+            <div class="rp-modal__panel">
+                <div class="rp-modal__header">
+                    <h2>Cancel reservation?</h2>
+                    <button type="button" class="rp-modal__close" data-close-cancel-confirm>&times;</button>
+                </div>
+                <div class="rp-modal__content">
+                    <p>Are you sure you want to cancel? This will refresh the page.</p>
+                    <div class="rp-modal__actions">
+                        <button type="button" class="rp-modal__btn rp-modal__btn--secondary" data-close-cancel-confirm>No</button>
+                        <button type="button" class="rp-modal__btn rp-modal__btn--primary" id="confirmCancelBtn">Yes, cancel</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
 
