@@ -155,6 +155,8 @@ Route::get('/reservation/availability', function (Request $request) {
 Route::get('/reservation/availability/calendar', function (Request $request) {
     $amenityId = $request->query('amenity_id');
     $slot = $request->query('slot', 'Daytime');
+    $month = $request->query('month');
+    $year = $request->query('year');
 
     if (! $amenityId) {
         return response()->json([
@@ -165,11 +167,28 @@ Route::get('/reservation/availability/calendar', function (Request $request) {
     }
 
     // Use today's date in the application's timezone to avoid offset issues
-    $today = \Carbon\Carbon::today()->startOfDay();
+    if ($month !== null && $year !== null) {
+        // If month and year are provided, start from the first day of that month
+        $startDate = \Carbon\Carbon::createFromDate($year, $month + 1, 1)->startOfDay();
+    } else {
+        // Default to today and show 30 days
+        $startDate = \Carbon\Carbon::today()->startOfDay();
+    }
+    
     $availability = [];
+    
+    // Determine the number of days to show
+    if ($month !== null && $year !== null) {
+        // Show entire month
+        $daysInMonth = $startDate->daysInMonth;
+        $numDays = $daysInMonth;
+    } else {
+        // Show 30 days
+        $numDays = 30;
+    }
 
-    for ($i = 0; $i < 30; $i++) {
-        $date = $today->copy()->addDays($i)->toDateString();
+    for ($i = 0; $i < $numDays; $i++) {
+        $date = $startDate->copy()->addDays($i)->toDateString();
         
         // Check daytime availability separately
         // For Daytime, check Daytime and DayNight Time bookings

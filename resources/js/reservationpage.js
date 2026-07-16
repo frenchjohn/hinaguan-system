@@ -296,6 +296,66 @@ document.addEventListener('DOMContentLoaded', () => {
         availabilitySlotButtons.forEach(button => {
             button.classList.toggle('is-active', button.dataset.slotToggle === calendarSlot);
         });
+        
+        // Initialize month and year dropdowns
+        const calendarMonthSelect = document.getElementById('calendarMonth');
+        const calendarYearSelect = document.getElementById('calendarYear');
+        
+        if (calendarMonthSelect && calendarYearSelect) {
+            // Set current month
+            const today = new Date();
+            calendarMonthSelect.value = today.getMonth();
+            
+            // Populate year dropdown (current year to 4 years ahead, total 5 years)
+            const currentYear = today.getFullYear();
+            calendarYearSelect.innerHTML = '';
+            for (let year = currentYear; year <= currentYear + 4; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                calendarYearSelect.appendChild(option);
+            }
+            calendarYearSelect.value = currentYear;
+            
+            // Add event listeners for dropdown changes
+            const fetchCalendarData = async () => {
+                const selectedMonth = calendarMonthSelect.value;
+                const selectedYear = calendarYearSelect.value;
+                
+                // Add loading state
+                availabilityCalendar.classList.add('is-loading');
+                
+                try {
+                    const url = new URL('/reservation/availability/calendar', window.location.origin);
+                    url.searchParams.set('amenity_id', calendarAmenityId);
+                    url.searchParams.set('slot', calendarSlot);
+                    url.searchParams.set('month', selectedMonth);
+                    url.searchParams.set('year', selectedYear);
+
+                    const response = await fetch(url.toString(), {
+                        headers: { Accept: 'application/json' },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Calendar availability request failed');
+                    }
+
+                    const payload = await response.json();
+                    calendarAvailability = payload.availability || [];
+                    renderAvailabilityCalendar();
+                } catch (error) {
+                    calendarAvailability = [];
+                    renderAvailabilityCalendar();
+                } finally {
+                    // Remove loading state
+                    availabilityCalendar.classList.remove('is-loading');
+                }
+            };
+            
+            calendarMonthSelect.addEventListener('change', fetchCalendarData);
+            calendarYearSelect.addEventListener('change', fetchCalendarData);
+        }
+        
         calendarAvailability = [];
         renderAvailabilityCalendar();
         availabilityModal.classList.add('is-open');
@@ -343,11 +403,28 @@ document.addEventListener('DOMContentLoaded', () => {
             availabilityCalendar.appendChild(label);
         });
 
-        // Use today's date in local timezone to avoid offset issues
-        const firstDate = new Date();
-        firstDate.setHours(0, 0, 0, 0);
-        const startOffset = firstDate.getDay();
+        // Get the selected month and year from dropdowns, or use current date
+        const calendarMonthSelect = document.getElementById('calendarMonth');
+        const calendarYearSelect = document.getElementById('calendarYear');
+        
+        let selectedMonth, selectedYear;
+        
+        if (calendarMonthSelect && calendarYearSelect && calendarMonthSelect.value !== '' && calendarYearSelect.value !== '') {
+            selectedMonth = parseInt(calendarMonthSelect.value);
+            selectedYear = parseInt(calendarYearSelect.value);
+        } else {
+            // Default to current month/year
+            const today = new Date();
+            selectedMonth = today.getMonth();
+            selectedYear = today.getFullYear();
+        }
 
+        // Create date for the first day of the selected month
+        const firstDate = new Date(selectedYear, selectedMonth, 1);
+        const startOffset = firstDate.getDay();
+        const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+
+        // Add empty cells for days before the first day of the month
         for (let i = 0; i < startOffset; i += 1) {
             const spacer = document.createElement('span');
             spacer.className = 'rp-calendar__day rp-calendar__day--empty';
@@ -355,9 +432,8 @@ document.addEventListener('DOMContentLoaded', () => {
             availabilityCalendar.appendChild(spacer);
         }
 
-        const days = Array.from({ length: 30 }, (_, index) => {
-            const date = new Date(firstDate);
-            date.setDate(firstDate.getDate() + index);
+        const days = Array.from({ length: daysInMonth }, (_, index) => {
+            const date = new Date(selectedYear, selectedMonth, index + 1);
             // Use local date formatting to avoid timezone offset issues
             const isoDate = date.getFullYear() + '-' + 
                 String(date.getMonth() + 1).padStart(2, '0') + '-' + 

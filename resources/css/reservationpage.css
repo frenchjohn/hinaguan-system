@@ -1295,6 +1295,37 @@ html {
 .rp-calendar-wrap {
     width: 100%;
     overflow-x: auto;
+    position: relative;
+}
+
+.rp-calendar__controls {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    justify-content: center;
+}
+
+.rp-calendar__select {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(200, 164, 93, 0.4);
+    background: rgba(0, 0, 0, 0.4);
+    color: #fff;
+    font-family: var(--rp-font-body);
+    font-size: 0.875rem;
+    cursor: pointer;
+    color-scheme: dark;
+}
+
+.rp-calendar__select:focus {
+    outline: none;
+    border-color: var(--rp-gold);
+    box-shadow: 0 0 0 3px rgba(200, 164, 93, 0.25);
+}
+
+.rp-calendar__select option {
+    background: var(--rp-green-dark);
+    color: #fff;
 }
 
 .rp-calendar {
@@ -1303,6 +1334,32 @@ html {
     gap: 0.5rem;
     width: 100%;
     min-width: 0;
+    transition: opacity 0.3s ease;
+}
+
+.rp-calendar.is-loading {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.rp-calendar.is-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid rgba(200, 164, 93, 0.3);
+    border-top-color: var(--rp-gold);
+    border-radius: 50%;
+    animation: rp-calendar-spin 0.8s linear infinite;
+}
+
+@keyframes rp-calendar-spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
 }
 
 .rp-calendar__weekday {

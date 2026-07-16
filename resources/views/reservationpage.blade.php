@@ -300,6 +300,23 @@
                         <button type="button" class="rp-slot-btn" data-slot-toggle="Nighttime">Nighttime</button>
                         <button type="button" class="rp-slot-btn" data-slot-toggle="DayNight Time">DayNight Time</button>
                     </div>
+                    <div class="rp-calendar__controls">
+                        <select id="calendarMonth" class="rp-calendar__select">
+                            <option value="0">January</option>
+                            <option value="1">February</option>
+                            <option value="2">March</option>
+                            <option value="3">April</option>
+                            <option value="4">May</option>
+                            <option value="5">June</option>
+                            <option value="6">July</option>
+                            <option value="7">August</option>
+                            <option value="8">September</option>
+                            <option value="9">October</option>
+                            <option value="10">November</option>
+                            <option value="11">December</option>
+                        </select>
+                        <select id="calendarYear" class="rp-calendar__select"></select>
+                    </div>
                     <div class="rp-calendar-wrap">
                         <div class="rp-calendar" id="availabilityCalendar" role="grid" aria-label="Available dates"></div>
                     </div>
