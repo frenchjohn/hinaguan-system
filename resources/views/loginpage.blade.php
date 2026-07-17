@@ -12,25 +12,21 @@
 <body class="login-page" style="--lp-page-bg: url('{{ asset('images/background.jpeg') }}')">
     <main class="login-page__wrapper">
         <section class="login-page__split">
-            <aside class="login-panel login-panel--brand">
+            <aside class="login-panel login-panel--message">
                 <div class="login-panel__content">
                     <div class="login-panel__logo">
-                        <span class="login-panel__logo-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c-1.5 2.5-4 5-4 8a4 4 0 108 0c0-3-2.5-5.5-4-8z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M10 18h4"/>
-                            </svg>
-                        </span>
-                        <span class="login-panel__logo-text">Hinaguan Nature Park</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c-1.5 2.5-4 5-4 8a4 4 0 108 0c0-3-2.5-5.5-4-8z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M10 18h4"/>
+                        </svg>
+                        <span>Hinaguan Nature Park</span>
                     </div>
-                    <span class="login-panel__eyebrow">Staff Portal</span>
-                    <h1 class="login-panel__title">Park Management</h1>
+                    <span class="login-panel__badge">Private Access</span>
+                    <h1 class="login-panel__title">Staff & Admin Portal</h1>
                     <p class="login-panel__text">
-                        Secure access for park staff and administrators.
-                        Manage reservations, view the dashboard, and keep operations running smoothly.
+                        Secure access for authorized personnel only. This area is restricted to park staff and administrators for managing reservations and operations.
                     </p>
                 </div>
-                <div class="login-panel__visual" aria-hidden="true"></div>
             </aside>
 
             <aside class="login-panel login-panel--form">
@@ -50,7 +46,7 @@
 
                         <div class="login-form__group">
                             <label for="email">Email</label>
-                            <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="email" />
+                            <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="email" placeholder="Enter your email" />
                             @error('email')
                                 <p class="login-form__error">{{ $message }}</p>
                             @enderror
@@ -59,7 +55,7 @@
                         <div class="login-form__group">
                             <label for="password">Password</label>
                             <div class="login-form__password">
-                                <input id="password" type="password" name="password" required autocomplete="current-password" />
+                                <input id="password" type="password" name="password" required autocomplete="current-password" placeholder="Enter your password" />
                                 <button type="button" class="login-form__toggle" data-password-toggle>Show</button>
                             </div>
                             @error('password')
