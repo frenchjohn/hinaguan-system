@@ -51,6 +51,12 @@
                                 <span>Filters</span>
                                 <span class="guest-filter-toggle__icon">▾</span>
                             </button>
+                            <button type="button" class="guest-filter-toggle guest-filter-toggle--secondary" id="refreshTableBtn" style="background-color: var(--hp-green-dark); color: white;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width: 1.25rem; height: 1.25rem;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Refresh
+                            </button>
                             <button type="button" class="guest-filter-toggle guest-filter-toggle--secondary" id="scanQrBtn" style="background-color: var(--hp-green-dark); color: white;">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width: 1.25rem; height: 1.25rem;">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -129,7 +135,7 @@
                                             <div class="guest-name">{{ $reservation->booker_name }}</div>
                                             <div class="guest-meta">{{ $reservation->email }}</div>
                                         </td>
-                                        <td>{{ $reservation->reservation_date }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($reservation->reservation_date)->format('F j, Y') }}</td>
                                         <td>{{ $reservation->number_of_guests }}</td>
                                         <td>
                                             <span class="reservation-status reservation-status--{{ strtolower($reservation->status) }}">{{ $reservation->status }}</span>
@@ -152,9 +158,95 @@
                         <button type="button" class="guest-modal__close" data-close-reservation-modal="true" aria-label="Close reservation details">&times;</button>
                         <div class="guest-modal__header">
                             <h3 id="reservationModalTitle" class="guest-modal__title">Reservation Details</h3>
-                            <span id="reservationModalStatus" class="guest-modal__role-badge"></span>
+                            <div class="guest-modal__header-actions">
+                                <span id="reservationModalStatus" class="guest-modal__role-badge"></span>
+                                <button type="button" class="guest-modal__edit-btn" id="editReservationBtn" data-edit-reservation="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                    </svg>
+                                    Edit
+                                </button>
+                            </div>
                         </div>
                         <div id="reservationModalBody" class="guest-modal__body"></div>
+                        <div id="reservationModalEditForm" class="guest-modal__edit-form" hidden>
+                            <form id="editReservationForm" class="guest-form">
+                                <input type="hidden" name="reservation_id" id="editReservationId">
+                                <div class="guest-form__row guest-form__row--two">
+                                    <label class="guest-form__field">
+                                        <span>Booker Name</span>
+                                        <input type="text" name="booker_name" id="editBookerName" required>
+                                    </label>
+                                    <label class="guest-form__field">
+                                        <span>Email</span>
+                                        <input type="email" name="email" id="editEmail" required>
+                                    </label>
+                                </div>
+                                <div class="guest-form__row guest-form__row--two">
+                                    <label class="guest-form__field">
+                                        <span>Phone</span>
+                                        <input type="text" name="phone" id="editPhone" required>
+                                    </label>
+                                    <label class="guest-form__field">
+                                        <span>Reservation Date</span>
+                                        <input type="date" name="reservation_date" id="editReservationDate" required>
+                                    </label>
+                                </div>
+                                <div class="guest-form__row guest-form__row--two">
+                                    <label class="guest-form__field">
+                                        <span>Number of Guests</span>
+                                        <input type="number" name="number_of_guests" id="editGuests" min="1" required>
+                                    </label>
+                                    <label class="guest-form__field">
+                                        <span>Status</span>
+                                        <select name="status" id="editStatus">
+                                            <option value="Pending">Pending</option>
+                                            <option value="Confirmed">Confirmed</option>
+                                            <option value="Checked In">Checked In</option>
+                                            <option value="Checked Out">Checked Out</option>
+                                            <option value="Cancelled">Cancelled</option>
+                                        </select>
+                                    </label>
+                                </div>
+                                <div class="guest-form__actions">
+                                    <button type="button" class="guest-form__secondary" id="cancelEditBtn">Cancel</button>
+                                    <button type="submit" class="guest-form__button">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guest-modal guest-modal--confirm" id="confirmModal" aria-hidden="true">
+                    <div class="guest-modal__backdrop" data-close-confirm-modal="true"></div>
+                    <div class="guest-modal__content guest-modal__content--confirm" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+                        <div class="guest-modal__confirm-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                            </svg>
+                        </div>
+                        <h3 id="confirmModalTitle" class="guest-modal__title guest-modal__title--confirm">Confirm Action</h3>
+                        <p id="confirmModalMessage" class="guest-modal__message">Are you sure you want to proceed?</p>
+                        <div class="guest-modal__actions">
+                            <button type="button" class="guest-form__secondary" id="confirmModalCancel">No</button>
+                            <button type="button" class="guest-form__button" id="confirmModalConfirm">Yes</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guest-modal guest-modal--success" id="successModal" aria-hidden="true">
+                    <div class="guest-modal__backdrop" data-close-success-modal="true"></div>
+                    <div class="guest-modal__content guest-modal__content--success" role="dialog" aria-modal="true" aria-labelledby="successModalTitle">
+                        <div class="guest-modal__success-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h3 id="successModalTitle" class="guest-modal__title guest-modal__title--success">Success</h3>
+                        <p id="successModalMessage" class="guest-modal__message">Operation completed successfully!</p>
+                        <div class="guest-modal__actions">
+                            <button type="button" class="guest-form__button" id="successModalClose">OK</button>
+                        </div>
                     </div>
                 </div>
 

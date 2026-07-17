@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsCount = document.getElementById('reservationResultsCount');
     const filterToggle = document.getElementById('reservationFilterToggle');
     const filterPanel = document.getElementById('reservationFilterPanel');
+    const refreshTableBtn = document.getElementById('refreshTableBtn');
     const reservationData = window.staffReservationData || {};
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
@@ -54,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let checkInCompanions = [];
     let existingReservationGuests = [];
     let primaryGuestToUpdate = null;
+    let currentModalReservationId = null;
 
     const toggleCheckInNationalityFields = () => {
         const primaryForeign = checkInPrimaryNationalityOption?.value === 'Foreign';
@@ -459,6 +461,22 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Store current reservation ID for edit functionality
+        currentModalReservationId = reservationId;
+
+        // Ensure modal body is visible and edit form is hidden
+        modalBody.hidden = false;
+        const editForm = document.getElementById('reservationModalEditForm');
+        if (editForm) {
+            editForm.hidden = true;
+        }
+
+        // Format reservation date to remove timezone suffix
+        const formatDate = (dateStr) => {
+            if (!dateStr) return 'N/A';
+            return dateStr.replace(/T.*$/, '').replace(/Z$/, '');
+        };
+
         const guests = (reservation.reservation_guests || []).map((guest) => {
             const name = [guest.customer?.first_name, guest.customer?.last_name].filter(Boolean).join(' ').trim() || 'Unnamed guest';
             const role = guest.is_primary_guest ? 'Primary Guest' : 'Companion';
@@ -491,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div>
                         <span class="guest-label">Reservation date</span>
-                        <div class="guest-value">${escapeHtml(reservation.reservation_date || 'N/A')}</div>
+                        <div class="guest-value">${escapeHtml(formatDate(reservation.reservation_date))}</div>
                     </div>
                     <div>
                         <span class="guest-label">Guests</span>
@@ -527,10 +545,419 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModal = () => {
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
+        const editForm = document.getElementById('reservationModalEditForm');
+        if (editForm) {
+            editForm.hidden = true;
+        }
+    };
+
+    const renderTableFromData = (data) => {
+        tableBody.innerHTML = '';
+        Object.values(data).forEach((reservation) => {
+            const row = document.createElement('tr');
+            row.className = `guest-row reservation-row ${reservation.reservation_date === new Date().toISOString().split('T')[0] ? 'today-reservation' : ''}`;
+            row.setAttribute('data-reservation-id', reservation.id);
+            row.setAttribute('data-booker-name', reservation.booker_name);
+            row.setAttribute('data-email', reservation.email);
+            row.setAttribute('data-phone', reservation.phone);
+            row.setAttribute('data-reservation-date', reservation.reservation_date);
+            row.setAttribute('data-status', reservation.status.toLowerCase());
+            row.setAttribute('data-guests', reservation.number_of_guests);
+            row.setAttribute('data-total-amount', reservation.total_amount);
+            row.setAttribute('data-search', `${(reservation.booker_name || '').toLowerCase()} ${(reservation.email || '').toLowerCase()} ${(reservation.phone || '').toLowerCase()} ${(reservation.status || '').toLowerCase()}`);
+            row.setAttribute('tabindex', '0');
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', `View reservation details for ${reservation.booker_name}`);
+
+            // Format date to readable format (e.g., September 2, 2023)
+            const formatDate = (dateStr) => {
+                if (!dateStr) return 'N/A';
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return dateStr;
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                return date.toLocaleDateString('en-US', options);
+            };
+            
+            row.innerHTML = `
+                <td>
+                    <div class="guest-name">${escapeHtml(reservation.booker_name)}</div>
+                    <div class="guest-meta">${escapeHtml(reservation.email)}</div>
+                </td>
+                <td>${escapeHtml(formatDate(reservation.reservation_date))}</td>
+                <td>${escapeHtml(reservation.number_of_guests)}</td>
+                <td>
+                    <span class="reservation-status reservation-status--${reservation.status.toLowerCase()}">${escapeHtml(reservation.status)}</span>
+                </td>
+                <td>₱${Number(reservation.total_amount).toFixed(2)}</td>
+            `;
+            
+            tableBody.appendChild(row);
+            
+            // Add click event listener
+            row.addEventListener('click', () => openModal(reservation.id));
+            row.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openModal(reservation.id);
+                }
+            });
+        });
+
+        // Update results count
+        if (resultsCount) {
+            resultsCount.textContent = `Showing ${Object.values(data).length} reservation${Object.values(data).length === 1 ? '' : 's'}`;
+        }
+
+        // Re-apply current filters
+        applyFilters();
     };
 
     closeButtons.forEach((button) => {
         button.addEventListener('click', closeModal);
+    });
+
+    // Edit reservation functionality
+    const editReservationBtn = document.getElementById('editReservationBtn');
+    const editForm = document.getElementById('reservationModalEditForm');
+    const editReservationForm = document.getElementById('editReservationForm');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+    // Confirmation modal functionality
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmModalTitle = document.getElementById('confirmModalTitle');
+    const confirmModalMessage = document.getElementById('confirmModalMessage');
+    const confirmModalConfirm = document.getElementById('confirmModalConfirm');
+    const confirmModalCancel = document.getElementById('confirmModalCancel');
+    const confirmModalCloseButtons = document.querySelectorAll('[data-close-confirm-modal="true"]');
+
+    let confirmCallback = null;
+
+    const showConfirmModal = (title, message, callback) => {
+        if (confirmModalTitle) confirmModalTitle.textContent = title;
+        if (confirmModalMessage) confirmModalMessage.textContent = message;
+        confirmCallback = callback;
+        confirmModal.classList.add('is-open');
+        confirmModal.setAttribute('aria-hidden', 'false');
+    };
+
+    const closeConfirmModal = () => {
+        confirmModal.classList.remove('is-open');
+        confirmModal.setAttribute('aria-hidden', 'true');
+        confirmCallback = null;
+    };
+
+    confirmModalCloseButtons.forEach((button) => {
+        button.addEventListener('click', closeConfirmModal);
+    });
+
+    confirmModalCancel?.addEventListener('click', closeConfirmModal);
+
+    confirmModalConfirm?.addEventListener('click', () => {
+        if (confirmCallback) {
+            confirmCallback();
+        }
+        closeConfirmModal();
+    });
+
+    // Success modal functionality
+    const successModal = document.getElementById('successModal');
+    const successModalTitle = document.getElementById('successModalTitle');
+    const successModalMessage = document.getElementById('successModalMessage');
+    const successModalClose = document.getElementById('successModalClose');
+    const successModalCloseButtons = document.querySelectorAll('[data-close-success-modal="true"]');
+
+    const showSuccessModal = (message) => {
+        if (successModalMessage) successModalMessage.textContent = message;
+        successModal.classList.add('is-open');
+        successModal.setAttribute('aria-hidden', 'false');
+    };
+
+    const closeSuccessModal = () => {
+        successModal.classList.remove('is-open');
+        successModal.setAttribute('aria-hidden', 'true');
+    };
+
+    successModalCloseButtons.forEach((button) => {
+        button.addEventListener('click', closeSuccessModal);
+    });
+
+    successModalClose?.addEventListener('click', closeSuccessModal);
+
+    const openEditForm = (reservationId) => {
+        const reservation = reservationData?.[reservationId];
+        if (!reservation || !editForm) return;
+
+        // Reset submit button state
+        const submitButton = editReservationForm.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Save Changes';
+        }
+
+        // Format date for date input (YYYY-MM-DD)
+        const formatDateForInput = (dateStr) => {
+            if (!dateStr) return '';
+            return dateStr.replace(/T.*$/, '').replace(/Z$/, '');
+        };
+
+        // Populate form fields
+        document.getElementById('editReservationId').value = reservation.id;
+        document.getElementById('editBookerName').value = reservation.booker_name || '';
+        document.getElementById('editEmail').value = reservation.email || '';
+        document.getElementById('editPhone').value = reservation.phone || '';
+        document.getElementById('editReservationDate').value = formatDateForInput(reservation.reservation_date);
+        document.getElementById('editGuests').value = reservation.number_of_guests || '';
+        document.getElementById('editStatus').value = reservation.status || 'Pending';
+
+        // Hide body, show edit form
+        modalBody.hidden = true;
+        editForm.hidden = false;
+    };
+
+    const closeEditForm = () => {
+        if (editForm) {
+            editForm.hidden = true;
+        }
+        if (modalBody) {
+            modalBody.hidden = false;
+        }
+    };
+
+    editReservationBtn?.addEventListener('click', () => {
+        if (currentModalReservationId) {
+            openEditForm(currentModalReservationId);
+        }
+    });
+
+    // Refresh table functionality
+    refreshTableBtn?.addEventListener('click', async () => {
+        try {
+            // Show skeleton loading
+            const skeletonCount = Math.min(5, Object.keys(reservationData).length || 5);
+            tableBody.innerHTML = '';
+            for (let i = 0; i < skeletonCount; i++) {
+                const skeletonRow = document.createElement('tr');
+                skeletonRow.className = 'guest-row guest-row--skeleton';
+                skeletonRow.innerHTML = `
+                    <td>
+                        <div class="skeleton skeleton-text skeleton-text--medium"></div>
+                        <div class="skeleton skeleton-text skeleton-text--short"></div>
+                    </td>
+                    <td>
+                        <div class="skeleton skeleton-text skeleton-text--short"></div>
+                    </td>
+                    <td>
+                        <div class="skeleton skeleton-text skeleton-text--short"></div>
+                    </td>
+                    <td>
+                        <div class="skeleton skeleton-badge"></div>
+                    </td>
+                    <td>
+                        <div class="skeleton skeleton-text skeleton-text--short"></div>
+                    </td>
+                `;
+                tableBody.appendChild(skeletonRow);
+            }
+
+            const response = await fetch('/staff/reservations/refresh', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to refresh reservations');
+            }
+
+            const data = await response.json();
+            
+            // Update reservation data
+            if (data.reservations) {
+                // Update global reservationData
+                Object.assign(reservationData, data.reservations);
+                
+                // Convert object to array for iteration
+                const reservationsArray = Object.values(data.reservations);
+                
+                // Format date to readable format (e.g., September 2, 2023)
+                const formatDate = (dateStr) => {
+                    if (!dateStr) return 'N/A';
+                    const date = new Date(dateStr);
+                    if (isNaN(date.getTime())) return dateStr;
+                    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                    return date.toLocaleDateString('en-US', options);
+                };
+                
+                // Re-render table rows
+                tableBody.innerHTML = '';
+                reservationsArray.forEach((reservation) => {
+                    const row = document.createElement('tr');
+                    row.className = `guest-row reservation-row ${reservation.reservation_date === new Date().toISOString().split('T')[0] ? 'today-reservation' : ''}`;
+                    row.setAttribute('data-reservation-id', reservation.id);
+                    row.setAttribute('data-booker-name', reservation.booker_name);
+                    row.setAttribute('data-email', reservation.email);
+                    row.setAttribute('data-phone', reservation.phone);
+                    row.setAttribute('data-reservation-date', reservation.reservation_date);
+                    row.setAttribute('data-status', reservation.status.toLowerCase());
+                    row.setAttribute('data-guests', reservation.number_of_guests);
+                    row.setAttribute('data-total-amount', reservation.total_amount);
+                    row.setAttribute('data-search', `${(reservation.booker_name || '').toLowerCase()} ${(reservation.email || '').toLowerCase()} ${(reservation.phone || '').toLowerCase()} ${(reservation.status || '').toLowerCase()}`);
+                    row.setAttribute('tabindex', '0');
+                    row.setAttribute('role', 'button');
+                    row.setAttribute('aria-label', `View reservation details for ${reservation.booker_name}`);
+                    
+                    row.innerHTML = `
+                        <td>
+                            <div class="guest-name">${escapeHtml(reservation.booker_name)}</div>
+                            <div class="guest-meta">${escapeHtml(reservation.email)}</div>
+                        </td>
+                        <td>${escapeHtml(formatDate(reservation.reservation_date))}</td>
+                        <td>${escapeHtml(reservation.number_of_guests)}</td>
+                        <td>
+                            <span class="reservation-status reservation-status--${reservation.status.toLowerCase()}">${escapeHtml(reservation.status)}</span>
+                        </td>
+                        <td>₱${Number(reservation.total_amount).toFixed(2)}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                    
+                    // Add click event listener
+                    row.addEventListener('click', () => openModal(reservation.id));
+                    row.addEventListener('keydown', (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            openModal(reservation.id);
+                        }
+                    });
+                });
+
+                // Update results count
+                if (resultsCount) {
+                    resultsCount.textContent = `Showing ${reservationsArray.length} reservation${reservationsArray.length === 1 ? '' : 's'}`;
+                }
+
+                // Re-apply current filters
+                applyFilters();
+            } else {
+                throw new Error('No reservation data received');
+            }
+        } catch (error) {
+            console.error('Error refreshing table:', error);
+            window.alert('Failed to refresh table. Please try again.');
+            // Re-render existing data to prevent empty table
+            renderTableFromData(reservationData);
+        }
+    });
+
+    cancelEditBtn?.addEventListener('click', closeEditForm);
+
+    editReservationForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(editReservationForm);
+        const reservationId = formData.get('reservation_id');
+        const submitButton = editReservationForm.querySelector('button[type="submit"]');
+
+        // Show custom confirmation modal
+        showConfirmModal(
+            'Save Changes',
+            'Are you sure you want to save these changes to the reservation?',
+            async () => {
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Saving...';
+                }
+
+                try {
+                    const response = await fetch(`/staff/reservations/${reservationId}/update`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({
+                            booker_name: formData.get('booker_name'),
+                            email: formData.get('email'),
+                            phone: formData.get('phone'),
+                            reservation_date: formData.get('reservation_date'),
+                            number_of_guests: formData.get('number_of_guests'),
+                            status: formData.get('status'),
+                        }),
+                    });
+
+                    const payload = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Unable to update reservation.');
+                    }
+
+                    // Update local data
+                    if (reservationData[reservationId]) {
+                        reservationData[reservationId] = {
+                            ...reservationData[reservationId],
+                            booker_name: formData.get('booker_name'),
+                            email: formData.get('email'),
+                            phone: formData.get('phone'),
+                            reservation_date: formData.get('reservation_date'),
+                            number_of_guests: formData.get('number_of_guests'),
+                            status: formData.get('status'),
+                        };
+                    }
+
+                    // Update table row with new data
+                    const tableRow = document.querySelector(`tr[data-reservation-id="${reservationId}"]`);
+                    if (tableRow) {
+                        tableRow.setAttribute('data-booker-name', formData.get('booker_name'));
+                        tableRow.setAttribute('data-email', formData.get('email'));
+                        tableRow.setAttribute('data-phone', formData.get('phone'));
+                        tableRow.setAttribute('data-reservation-date', formData.get('reservation_date'));
+                        tableRow.setAttribute('data-status', formData.get('status').toLowerCase());
+                        tableRow.setAttribute('data-guests', formData.get('number_of_guests'));
+
+                        // Format date to readable format (e.g., September 2, 2023)
+                        const formatDate = (dateStr) => {
+                            if (!dateStr) return 'N/A';
+                            const date = new Date(dateStr);
+                            if (isNaN(date.getTime())) return dateStr;
+                            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                            return date.toLocaleDateString('en-US', options);
+                        };
+
+                        // Update table cell content
+                        const cells = tableRow.querySelectorAll('td');
+                        if (cells[0]) {
+                            cells[0].innerHTML = `
+                                <div class="guest-name">${escapeHtml(formData.get('booker_name'))}</div>
+                                <div class="guest-meta">${escapeHtml(formData.get('email'))}</div>
+                            `;
+                        }
+                        if (cells[1]) {
+                            cells[1].textContent = formatDate(formData.get('reservation_date'));
+                        }
+                        if (cells[2]) {
+                            cells[2].textContent = formData.get('number_of_guests');
+                        }
+                        if (cells[3]) {
+                            const status = formData.get('status');
+                            cells[3].innerHTML = `<span class="reservation-status reservation-status--${String(status || '').toLowerCase()}">${status}</span>`;
+                        }
+                    }
+
+                    // Close modal after successful update
+                    closeModal();
+                    showSuccessModal('Reservation updated successfully!');
+                } catch (error) {
+                    window.alert(error.message || 'Unable to update reservation.');
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Save Changes';
+                    }
+                }
+            }
+        );
     });
 
     checkInCloseButtons.forEach((button) => {
@@ -538,29 +965,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const checkOutReservation = async (reservationId) => {
-        const confirmed = confirm('Are you sure you want to check out this reservation? All guests will be marked as checked out.');
-        if (!confirmed) return;
+        showConfirmModal(
+            'Check Out Reservation',
+            'Are you sure you want to check out this reservation? All guests will be marked as checked out.',
+            async () => {
+                try {
+                    const response = await fetch(`/staff/reservations/${reservationId}/check-out`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
 
-        try {
-            const response = await fetch(`/staff/reservations/${reservationId}/check-out`, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-            });
+                    const payload = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Unable to check out this reservation.');
+                    }
 
-            const payload = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                throw new Error(payload.message || 'Unable to check out this reservation.');
+                    showSuccessModal('Reservation checked out successfully!');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } catch (error) {
+                    window.alert(error.message || 'Unable to check out this reservation.');
+                }
             }
-
-            window.location.reload();
-        } catch (error) {
-            window.alert(error.message || 'Unable to check out this reservation.');
-        }
+        );
     };
 
     const allGuestsCheckedOut = (reservation) => {

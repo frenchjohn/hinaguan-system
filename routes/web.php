@@ -1734,6 +1734,104 @@ Route::prefix('staff')->name('staff.')->group(function () {
         ]);
     })->name('reservations.checkout');
 
+    Route::post('/reservations/{reservation}/update', function (Request $request, Reservation $reservation) {
+        $user = $request->session()->get('auth_user');
+        if (! $user || $user['role'] !== 'staff') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'booker_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:20',
+            'reservation_date' => 'required|date',
+            'number_of_guests' => 'required|integer|min:1',
+            'status' => 'required|in:Pending,Confirmed,Checked In,Checked Out,Cancelled',
+        ]);
+
+        $reservation->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reservation updated successfully.',
+            'reservation' => $reservation,
+        ]);
+    })->name('reservations.update');
+
+    Route::get('/reservations/refresh', function (Request $request) {
+        $user = $request->session()->get('auth_user');
+        if (! $user || $user['role'] !== 'staff') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $reservations = Reservation::query()
+            ->with(['reservationAmenities.amenity', 'reservationGuests.customer'])
+            ->where('reservation_type', 'online')
+            ->where(function ($query) {
+                $query->whereNull('check_in')
+                    ->orWhere('check_in', '');
+            })
+            ->where(function ($query) {
+                $query->where('status', 'Pending')
+                    ->orWhere('status', 'Confirmed');
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $reservationData = $reservations->mapWithKeys(function ($reservation) {
+            return [$reservation->id => [
+                'id' => $reservation->id,
+                'booker_name' => $reservation->booker_name,
+                'phone' => $reservation->phone,
+                'email' => $reservation->email,
+                'reservation_date' => $reservation->reservation_date,
+                'check_in' => $reservation->check_in,
+                'number_of_guests' => $reservation->number_of_guests,
+                'status' => $reservation->status,
+                'reservation_type' => $reservation->reservation_type,
+                'total_amount' => $reservation->total_amount,
+                'amount_paid' => $reservation->amount_paid,
+                'remaining_balance' => $reservation->remaining_balance,
+                'payment_status' => $reservation->payment_status,
+                'reservation_amenities' => $reservation->reservationAmenities->map(function ($reservationAmenity) {
+                    return [
+                        'pricing_type' => $reservationAmenity->pricing_type,
+                        'price_at_booking' => $reservationAmenity->price_at_booking,
+                        'quantity' => $reservationAmenity->quantity,
+                        'remarks' => $reservationAmenity->remarks,
+                        'amenity' => [
+                            'amenities_name' => $reservationAmenity->amenity?->amenities_name,
+                        ],
+                    ];
+                })->values(),
+                'reservation_guests' => $reservation->reservationGuests->map(function ($guestEntry) {
+                    $customer = $guestEntry->customer;
+                    return [
+                        'id' => $guestEntry->id,
+                        'is_primary_guest' => $guestEntry->is_primary_guest,
+                        'checked_out_at' => $guestEntry->checked_out_at,
+                        'customer' => $customer ? [
+                            'id' => $customer->id,
+                            'first_name' => $customer->first_name,
+                            'middle_name' => $customer->middle_name,
+                            'last_name' => $customer->last_name,
+                            'age' => $customer->age,
+                            'gender' => $customer->gender,
+                            'nationality' => $customer->nationality,
+                            'is_foreigner' => $customer->is_foreigner,
+                            'phone' => $customer->phone,
+                            'email' => $customer->email,
+                        ] : null,
+                    ];
+                })->values(),
+            ]];
+        })->toArray();
+
+        return response()->json([
+            'reservations' => $reservationData,
+        ]);
+    })->name('reservations.refresh');
+
     Route::post('/reservation-guests/{reservationGuest}/check-out', function (Request $request, ReservationGuest $reservationGuest) {
         $user = $request->session()->get('auth_user');
         if (! $user || $user['role'] !== 'staff') {

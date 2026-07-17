@@ -666,13 +666,209 @@
 .guest-modal__header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(13, 44, 29, 0.1);
+}
+
+[data-theme="dark"] .guest-modal__header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.guest-modal__header-actions {
+    display: flex;
+    align-items: center;
     gap: 0.75rem;
-    margin-bottom: 1rem;
+}
+
+.guest-modal__edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid rgba(13, 44, 29, 0.15);
+    border-radius: 0.65rem;
+    background: #fff;
+    color: var(--hp-text);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .guest-modal__edit-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.guest-modal__edit-btn svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.guest-modal__edit-btn:hover {
+    background: rgba(26, 58, 31, 0.1);
+    border-color: var(--hp-green);
 }
 
 .guest-modal__body {
     display: grid;
-    gap: 1rem;
+    gap: 1.25rem;
+}
+
+.guest-modal__edit-form {
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(13, 44, 29, 0.1);
+}
+
+[data-theme="dark"] .guest-modal__edit-form {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Confirmation Modal */
+.guest-modal--confirm .guest-modal__content--confirm {
+    max-width: 400px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.guest-modal__confirm-icon {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+[data-theme="dark"] .guest-modal__confirm-icon {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.guest-modal__confirm-icon svg {
+    width: 2rem;
+    height: 2rem;
+}
+
+.guest-modal__title--confirm {
+    margin-bottom: 0.75rem;
+    font-size: 1.25rem;
+}
+
+.guest-modal__message {
+    margin-bottom: 2rem;
+    color: var(--hp-text-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.guest-modal__actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.guest-modal__actions .guest-form__secondary,
+.guest-modal__actions .guest-form__button {
+    min-width: 100px;
+}
+
+/* Success Modal */
+.guest-modal--success .guest-modal__content--success {
+    max-width: 400px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.guest-modal__success-icon {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+[data-theme="dark"] .guest-modal__success-icon {
+    background: rgba(34, 197, 94, 0.2);
+}
+
+.guest-modal__success-icon svg {
+    width: 2rem;
+    height: 2rem;
+}
+
+.guest-modal__title--success {
+    margin-bottom: 0.75rem;
+    font-size: 1.25rem;
+    color: #22c55e;
+}
+
+/* Skeleton Loading */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+}
+
+[data-theme="dark"] .skeleton {
+    background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+    background-size: 200% 100%;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeleton-text {
+    height: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-text--short {
+    width: 60%;
+}
+
+.skeleton-text--medium {
+    width: 80%;
+}
+
+.skeleton-text--long {
+    width: 100%;
+}
+
+.skeleton-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+}
+
+.skeleton-badge {
+    width: 5rem;
+    height: 1.5rem;
+    border-radius: 1rem;
+}
+
+.guest-row--skeleton td {
+    padding: 1rem;
+}
+
+.guest-row--skeleton .skeleton {
+    display: inline-block;
 }
 
 /* Guest Card */
@@ -691,7 +887,7 @@
 
 .guest-card__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
 }
 
