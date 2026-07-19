@@ -422,15 +422,28 @@
                     </div>
                 </div>
 
-                <div class="guest-modal guest-modal--compact" id="bulkCompanionPreviewModal" aria-hidden="true">
-                    <div class="guest-modal__backdrop" data-close-bulk-preview-modal="true"></div>
-                    <div class="guest-modal__content guest-modal__content--compact" role="dialog" aria-modal="true" aria-labelledby="bulkCompanionPreviewTitle">
-                        <button type="button" class="guest-modal__close" data-close-bulk-preview-modal="true" aria-label="Close preview">&times;</button>
-                        <h3 id="bulkCompanionPreviewTitle" class="guest-modal__title">Confirm Bulk Companions</h3>
-                        <div id="bulkCompanionPreviewBody" class="guest-modal__body"></div>
+                <div class="guest-modal guest-modal--compact" id="checkInConfirmationModal" aria-hidden="true">
+                    <div class="guest-modal__backdrop" data-close-check-in-confirmation="true"></div>
+                    <div class="guest-modal__content guest-modal__content--compact" role="dialog" aria-modal="true" aria-labelledby="checkInConfirmationTitle">
+                        <button type="button" class="guest-modal__close" data-close-check-in-confirmation="true" aria-label="Close confirmation">&times;</button>
+                        <h3 id="checkInConfirmationTitle" class="guest-modal__title">Check In Reservation</h3>
+                        <div id="checkInConfirmationBody" class="guest-modal__body"></div>
                         <div class="guest-form__actions">
-                            <button type="button" class="guest-form__secondary" data-close-bulk-preview-modal="true">Cancel</button>
-                            <button type="button" class="guest-form__button" id="confirmBulkCompanionsBtn">Confirm</button>
+                            <button type="button" class="guest-form__secondary" data-close-check-in-confirmation="true">Cancel</button>
+                            <button type="button" class="guest-form__button" id="confirmCheckInBtn">Yes, Check In</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guest-modal guest-modal--compact" id="companionSummaryModal" aria-hidden="true">
+                    <div class="guest-modal__backdrop" data-close-companion-summary="true"></div>
+                    <div class="guest-modal__content guest-modal__content--compact" role="dialog" aria-modal="true" aria-labelledby="companionSummaryTitle">
+                        <button type="button" class="guest-modal__close" data-close-companion-summary="true" aria-label="Close summary">&times;</button>
+                        <h3 id="companionSummaryTitle" class="guest-modal__title">Companion Groups Summary</h3>
+                        <div id="companionSummaryBody" class="guest-modal__body"></div>
+                        <div class="guest-form__actions">
+                            <button type="button" class="guest-form__secondary" data-close-companion-summary="true">Cancel</button>
+                            <button type="button" class="guest-form__button" id="proceedToCheckInBtn">Proceed to Check In</button>
                         </div>
                     </div>
                 </div>

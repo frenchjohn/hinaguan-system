@@ -26,11 +26,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const bulkCompanionModal = document.getElementById('bulkCompanionModal');
     const bulkCompanionForm = document.getElementById('bulkCompanionForm');
     const bulkCompanionCloseButtons = document.querySelectorAll('[data-close-bulk-companion-modal="true"]');
-    const bulkCompanionPreviewModal = document.getElementById('bulkCompanionPreviewModal');
-    const bulkCompanionPreviewBody = document.getElementById('bulkCompanionPreviewBody');
-    const bulkCompanionPreviewCloseButtons = document.querySelectorAll('[data-close-bulk-preview-modal="true"]');
-    const confirmBulkCompanionsBtn = document.getElementById('confirmBulkCompanionsBtn');
-    let pendingBulkCompanion = null;
+    const companionSummaryModal = document.getElementById('companionSummaryModal');
+    const companionSummaryBody = document.getElementById('companionSummaryBody');
+    const companionSummaryCloseButtons = document.querySelectorAll('[data-close-companion-summary="true"]');
+    const proceedToCheckInBtn = document.getElementById('proceedToCheckInBtn');
+    const checkInConfirmationModal = document.getElementById('checkInConfirmationModal');
+    const checkInConfirmationBody = document.getElementById('checkInConfirmationBody');
+    const checkInConfirmationCloseButtons = document.querySelectorAll('[data-close-check-in-confirmation="true"]');
+    const confirmCheckInBtn = document.getElementById('confirmCheckInBtn');
+    let currentReservationData = null;
+    let countdownTimer = null;
     const tableBody = document.getElementById('reservationTableBody');
     const rows = Array.from(tableBody?.querySelectorAll('.reservation-row') ?? []);
     const searchInput = document.getElementById('reservationSearchInput');
@@ -174,30 +179,109 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const openBulkCompanionPreviewModal = (companionData) => {
-        pendingBulkCompanion = companionData;
-        const nationality = companionData.is_foreigner ? 'Foreigner' : 'Filipino';
-        const html = `
-            <div style="margin-bottom: 1rem;">
-                <p><strong>Gender:</strong> ${companionData.gender}</p>
-                <p><strong>Nationality:</strong> ${nationality}</p>
-                <p><strong>Age Group:</strong> ${companionData.age_group}</p>
-                <p><strong>Quantity:</strong> ${companionData.quantity}</p>
-            </div>
-            <p style="color: #666; font-size: 0.875rem;">Are you sure you want to add ${companionData.quantity} companion(s) with these details?</p>
-        `;
-        bulkCompanionPreviewBody.innerHTML = html;
-        if (bulkCompanionPreviewModal) {
-            bulkCompanionPreviewModal.classList.add('is-open');
-            bulkCompanionPreviewModal.setAttribute('aria-hidden', 'false');
+    const openCompanionSummaryModal = () => {
+        if (bulkCompanionGroups.length === 0) {
+            // If no bulk companions, proceed directly to check-in confirmation
+            openCheckInConfirmationModal();
+            return;
+        }
+
+        let html = '<div style="margin-bottom: 1rem;"><h4>Companion Groups:</h4>';
+        let totalCompanions = 0;
+        
+        bulkCompanionGroups.forEach(group => {
+            const nationality = group.is_foreigner ? 'Foreigner' : 'Filipino';
+            html += `
+                <div style="padding: 0.5rem; background-color: #e5e5e5; border: 1px solid #d4d4d4; border-radius: 0.25rem; margin-bottom: 0.5rem; color: #000;">
+                    <p><strong>Gender:</strong> ${group.gender} | <strong>Nationality:</strong> ${nationality} | <strong>Age Group:</strong> ${group.age_group} | <strong>Quantity:</strong> ${group.quantity}</p>
+                </div>
+            `;
+            totalCompanions += group.quantity;
+        });
+        
+        html += `<p><strong>Total Companions:</strong> ${totalCompanions}</p></div>`;
+        html += '<p style="color: #666; font-size: 0.875rem;">Please review the companion groups above before checking in.</p>';
+        
+        companionSummaryBody.innerHTML = html;
+        if (companionSummaryModal) {
+            companionSummaryModal.classList.add('is-open');
+            companionSummaryModal.setAttribute('aria-hidden', 'false');
         }
     };
 
-    const closeBulkCompanionPreviewModal = () => {
-        pendingBulkCompanion = null;
-        if (bulkCompanionPreviewModal) {
-            bulkCompanionPreviewModal.classList.remove('is-open');
-            bulkCompanionPreviewModal.setAttribute('aria-hidden', 'true');
+    const closeCompanionSummaryModal = () => {
+        if (companionSummaryModal) {
+            companionSummaryModal.classList.remove('is-open');
+            companionSummaryModal.setAttribute('aria-hidden', 'true');
+        }
+    };
+
+    const openCheckInConfirmationModal = () => {
+        // Clear any existing timer
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+        }
+        
+        // Check if reservation date is today
+        const today = new Date().toISOString().split('T')[0];
+        const reservationDate = currentReservationData?.reservation_date ? 
+            new Date(currentReservationData.reservation_date).toISOString().split('T')[0] : null;
+        
+        const isToday = reservationDate === today;
+        
+        let html = '<p>Are you sure you want to check in this reservation now?</p>';
+        
+        if (!isToday && reservationDate) {
+            html += `
+                <div style="margin-top: 1rem; padding: 0.75rem; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 0.25rem; color: #856404;">
+                    <strong>⚠️ Warning:</strong> This reservation is not scheduled for today.<br>
+                    <strong>Reservation Date:</strong> ${reservationDate}<br>
+                    <strong>Today:</strong> ${today}
+                </div>
+            `;
+        }
+        
+        checkInConfirmationBody.innerHTML = html;
+        
+        // Handle button cooldown for non-today reservations
+        if (!isToday && reservationDate && confirmCheckInBtn) {
+            confirmCheckInBtn.disabled = true;
+            let countdown = 10;
+            confirmCheckInBtn.textContent = `Please wait ${countdown}s...`;
+            
+            countdownTimer = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    confirmCheckInBtn.textContent = `Please wait ${countdown}s...`;
+                } else {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                    confirmCheckInBtn.disabled = false;
+                    confirmCheckInBtn.textContent = 'Yes, Check In';
+                }
+            }, 1000);
+        } else if (confirmCheckInBtn) {
+            confirmCheckInBtn.disabled = false;
+            confirmCheckInBtn.textContent = 'Yes, Check In';
+        }
+        
+        if (checkInConfirmationModal) {
+            checkInConfirmationModal.classList.add('is-open');
+            checkInConfirmationModal.setAttribute('aria-hidden', 'false');
+        }
+    };
+
+    const closeCheckInConfirmationModal = () => {
+        // Clear any existing timer when closing modal
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+        }
+        
+        if (checkInConfirmationModal) {
+            checkInConfirmationModal.classList.remove('is-open');
+            checkInConfirmationModal.setAttribute('aria-hidden', 'true');
         }
     };
 
@@ -267,8 +351,12 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', closeBulkCompanionModal);
     });
 
-    bulkCompanionPreviewCloseButtons.forEach((button) => {
-        button.addEventListener('click', closeBulkCompanionPreviewModal);
+    companionSummaryCloseButtons.forEach((button) => {
+        button.addEventListener('click', closeCompanionSummaryModal);
+    });
+
+    checkInConfirmationCloseButtons.forEach((button) => {
+        button.addEventListener('click', closeCheckInConfirmationModal);
     });
 
     bulkCompanionForm?.addEventListener('submit', (e) => {
@@ -294,28 +382,26 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Open preview modal instead of directly adding
-        openBulkCompanionPreviewModal({
+        // Directly add the companion group
+        bulkCompanionGroups.push({
             gender,
             is_foreigner: isForeigner,
             age_group: ageGroup,
             quantity,
         });
+
+        renderCheckInCompanions();
         closeBulkCompanionModal();
     });
 
-    confirmBulkCompanionsBtn?.addEventListener('click', () => {
-        if (!pendingBulkCompanion) return;
+    proceedToCheckInBtn?.addEventListener('click', () => {
+        closeCompanionSummaryModal();
+        openCheckInConfirmationModal();
+    });
 
-        bulkCompanionGroups.push({
-            gender: pendingBulkCompanion.gender,
-            is_foreigner: pendingBulkCompanion.is_foreigner,
-            age_group: pendingBulkCompanion.age_group,
-            quantity: pendingBulkCompanion.quantity,
-        });
-
-        renderCheckInCompanions();
-        closeBulkCompanionPreviewModal();
+    confirmCheckInBtn?.addEventListener('click', () => {
+        closeCheckInConfirmationModal();
+        submitCheckInForm();
     });
 
     checkInCompanionForm?.addEventListener('submit', (e) => {
@@ -348,6 +434,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Get reservation data
         const reservation = reservationData[reservationId];
+        currentReservationData = reservation;
+        
         if (reservation && reservation.reservation_guests) {
             existingReservationGuests = [...reservation.reservation_guests];
 
@@ -1155,6 +1243,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Show companion summary modal instead of directly submitting
+        openCompanionSummaryModal();
+    });
+
+    const submitCheckInForm = async () => {
+        if (!pendingReservationId) {
+            return;
+        }
+
         const submitButton = checkInForm.querySelector('button[type="submit"]');
         if (submitButton) {
             submitButton.disabled = true;
@@ -1204,7 +1301,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 submitButton.textContent = 'Check In';
             }
         }
-    });
+    };
 
     rows.forEach((row) => {
         const openForRow = () => {
