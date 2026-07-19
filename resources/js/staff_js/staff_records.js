@@ -163,8 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="guest-value">${customerData.gender || 'N/A'}</div>
                     </div>
                     <div>
-                        <span class="guest-label">Nationality</span>
-                        <div class="guest-value">${customerData.nationality || 'N/A'}</div>
+                        <span class="guest-label">Status</span>
+                        <div class="guest-value">${customerData.is_foreigner ? 'Foreigner' : 'Filipino'}</div>
                     </div>
                 </div>
             </div>
@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="padding: 1rem; background-color: #f5f5f5; border-radius: 0.5rem;">
                     ${primaryGuest && primaryGuest.customer ? `
                         <div><strong>${escapeHtml(primaryGuest.customer.first_name)} ${escapeHtml(primaryGuest.customer.middle_name || '')} ${escapeHtml(primaryGuest.customer.last_name)}</strong></div>
-                        <div style="font-size: 0.875rem; color: #666;">Age: ${escapeHtml(primaryGuest.customer.age || 'N/A')} | Gender: ${escapeHtml(primaryGuest.customer.gender || 'N/A')} | Nationality: ${escapeHtml(primaryGuest.customer.nationality || 'N/A')}</div>
+                        <div style="font-size: 0.875rem; color: #666;">Age: ${escapeHtml(primaryGuest.customer.age || 'N/A')} | Gender: ${escapeHtml(primaryGuest.customer.gender || 'N/A')} | Status: ${escapeHtml(primaryGuest.customer.is_foreigner ? 'Foreigner' : 'Filipino')}</div>
                         <div style="font-size: 0.875rem; color: #666; margin-top: 0.5rem;">Checked Out: ${escapeHtml(primaryGuest.checked_out_at ? formatDateTime(primaryGuest.checked_out_at) : 'Not yet')}</div>
                     ` : '<div>No main guest assigned</div>'}
                 </div>
@@ -321,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${companions.map(c => `
                         <div style="padding: 0.75rem; background-color: #f5f5f5; border-radius: 0.5rem; margin-bottom: 0.5rem;">
                             <div><strong>${escapeHtml(c.customer.first_name)} ${escapeHtml(c.customer.middle_name || '')} ${escapeHtml(c.customer.last_name)}</strong></div>
-                            <div style="font-size: 0.875rem; color: #666;">Age: ${escapeHtml(c.customer.age || 'N/A')} | Gender: ${escapeHtml(c.customer.gender || 'N/A')} | Nationality: ${escapeHtml(c.customer.nationality || 'N/A')}</div>
+                            <div style="font-size: 0.875rem; color: #666;">Age: ${escapeHtml(c.customer.age || 'N/A')} | Gender: ${escapeHtml(c.customer.gender || 'N/A')} | Status: ${escapeHtml(c.customer.is_foreigner ? 'Foreigner' : 'Filipino')}</div>
                             <div style="font-size: 0.875rem; color: #666; margin-top: 0.5rem;">Checked Out: ${escapeHtml(c.checked_out_at ? formatDateTime(c.checked_out_at) : 'Not yet')}</div>
                         </div>
                     `).join('')}

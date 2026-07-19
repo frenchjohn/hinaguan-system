@@ -14,14 +14,11 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('middle_name')->nullable();
             $table->string('last_name');
-            $table->integer('age')->nullable();
+            $table->string('age')->nullable();
 
             $table->enum('gender', ['Male', 'Female']);
 
-            // Better than just a foreigner flag
-            $table->string('nationality')->default('Filipino');
-
-            // Optional if your school specifically wants a Yes/No
+            // 0 = Filipino, 1 = Foreigner
             $table->boolean('is_foreigner')->default(false);
 
             $table->string('phone')->nullable();

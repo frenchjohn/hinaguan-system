@@ -64,7 +64,7 @@
                         <div class="guest-toolbar guest-toolbar--collapsed" id="guestFilterPanel" hidden>
                             <label class="guest-toolbar__field guest-toolbar__field--search">
                                 <span>Search</span>
-                                <input type="search" id="guestSearchInput" placeholder="Search by name, ID, gender, nationality">
+                                <input type="search" id="guestSearchInput" placeholder="Search by name, ID, gender">
                             </label>
                             <label class="guest-toolbar__field">
                                 <span>Sort by</span>
@@ -99,7 +99,7 @@
                                     <th>Name</th>
                                     <th>Age</th>
                                     <th>Gender</th>
-                                    <th>Nationality</th>
+                                    <th>Status</th>
                                     <th>Checked Out</th>
                                 </tr>
                             </thead>
@@ -113,10 +113,10 @@
                                         data-customer-id="{{ $customer->id }}"
                                         data-age="{{ $customer->age ?? 'N/A' }}"
                                         data-gender="{{ $customer->gender ?? 'N/A' }}"
-                                        data-nationality="{{ $customer->nationality ?? 'N/A' }}"
+                                        data-is-foreigner="{{ $customer->is_foreigner ? 'Foreigner' : 'Filipino' }}"
                                         data-checked-out="{{ $guestEntry->checked_out_at ?? '' }}"
                                         data-age-value="{{ is_numeric($customer->age) ? (int) $customer->age : 999999 }}"
-                                        data-search="{{ strtolower(trim(($customer->first_name ?? '') . ' ' . ($customer->middle_name ?? '') . ' ' . ($customer->last_name ?? '') . ' ' . $customer->id . ' ' . ($customer->gender ?? '') . ' ' . ($customer->nationality ?? ''))) }}"
+                                        data-search="{{ strtolower(trim(($customer->first_name ?? '') . ' ' . ($customer->middle_name ?? '') . ' ' . ($customer->last_name ?? '') . ' ' . $customer->id . ' ' . ($customer->gender ?? '') . ' ' . ($customer->is_foreigner ? 'Foreigner' : 'Filipino'))) }}"
                                         tabindex="0"
                                         role="button"
                                         aria-label="View details for {{ trim(($customer->first_name ?? '') . ' ' . ($customer->middle_name ?? '') . ' ' . ($customer->last_name ?? '')) }}"
@@ -127,7 +127,7 @@
                                         </td>
                                         <td>{{ $customer->age ?? 'N/A' }}</td>
                                         <td>{{ $customer->gender ?? 'N/A' }}</td>
-                                        <td>{{ $customer->nationality ?? 'N/A' }}</td>
+                                        <td>{{ $customer->is_foreigner ? 'Foreigner' : 'Filipino' }}</td>
                                         <td>{{ $guestEntry->checked_out_at ? \Carbon\Carbon::parse($guestEntry->checked_out_at)->format('M d, Y h:i A') : 'N/A' }}</td>
                                     </tr>
                                 @empty

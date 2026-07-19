@@ -112,7 +112,7 @@
 						<div class="guest-toolbar guest-toolbar--collapsed" id="guestFilterPanel" hidden>
 							<label class="guest-toolbar__field guest-toolbar__field--search">
 								<span>Search</span>
-								<input type="search" id="guestSearchInput" placeholder="Search by name, ID, gender, nationality">
+								<input type="search" id="guestSearchInput" placeholder="Search by name, ID, gender">
 							</label>
 							<label class="guest-toolbar__field">
 								<span>Sort by</span>
@@ -155,7 +155,7 @@
 									<th>Name</th>
 									<th>Age</th>
 									<th>Gender</th>
-									<th>Nationality</th>
+									<th>Status</th>
 									<th>Reservation Type</th>
 								</tr>
 							</thead>
@@ -199,8 +199,8 @@
 											data-status="{{ $reservationEntry?->reservation?->status ?? 'N/A' }}"
 											data-age-value="{{ is_numeric($customer->age) ? (int) $customer->age : 999999 }}"
 											data-is-foreign="{{ (bool) ($customer->is_foreigner ?? false) ? 'true' : 'false' }}"
-											data-search="{{ strtolower(trim(($customer->first_name ?? '') . ' ' . ($customer->middle_name ?? '') . ' ' . ($customer->last_name ?? '') . ' ' . $customer->id . ' ' . ($customer->gender ?? '') . ' ' . ($customer->nationality ?? '') . ' ' . $reservationTypeLabel)) }}"
-										data-nationality="{{ $customer->nationality ?? 'N/A' }}"
+											data-search="{{ strtolower(trim(($customer->first_name ?? '') . ' ' . ($customer->middle_name ?? '') . ' ' . ($customer->last_name ?? '') . ' ' . $customer->id . ' ' . ($customer->gender ?? '') . ' ' . ($customer->is_foreigner ? 'Foreigner' : 'Filipino') . ' ' . $reservationTypeLabel)) }}"
+										data-is-foreigner="{{ $customer->is_foreigner ? 'Foreigner' : 'Filipino' }}"
 										data-reservation-type="{{ $reservationTypeLabel }}"
 										tabindex="0"
 										role="button"
@@ -212,7 +212,7 @@
 										</td>
 										<td>{{ $customer->age ?? 'N/A' }}</td>
 										<td>{{ $customer->gender ?? 'N/A' }}</td>
-										<td>{{ $customer->nationality ?? 'N/A' }}</td>
+										<td>{{ $customer->is_foreigner ? 'Foreigner' : 'Filipino' }}</td>
 										<td>{{ $reservationTypeLabel }}</td>
 									</tr>
 								@empty
@@ -388,15 +388,11 @@
 									</label>
 									<label class="guest-form__field">
 										<span>Nationality</span>
-											<select name="primary_guest[nationality_option]" id="primaryGuestNationalityOption">
-												<option value="Filipino" selected>Filipino</option>
-												<option value="Foreign">Foreign</option>
+											<select name="primary_guest[is_foreigner]" id="primaryGuestIsForeigner">
+												<option value="0" selected>Filipino</option>
+												<option value="1">Foreigner</option>
 											</select>
 										</label>
-										<label class="guest-form__field" id="primaryGuestNationalityTextField" style="display:none;">
-											<span>Foreign type</span>
-											<input type="text" name="primary_guest[nationality]" id="primaryGuestNationalityText" placeholder="e.g. American">
-									</label>
 								</div>
 								<div class="guest-form__row guest-form__row--two">
 									<label class="guest-form__field">
@@ -510,14 +506,10 @@
 								</label>
 								<label class="guest-form__field">
 									<span>Nationality</span>
-									<select name="nationality_option" id="companionNationalityOption">
-											<option value="Filipino" selected>Filipino</option>
-											<option value="Foreign">Foreign</option>
+									<select name="is_foreigner" id="companionIsForeigner">
+											<option value="0" selected>Filipino</option>
+											<option value="1">Foreigner</option>
 										</select>
-									</label>
-									<label class="guest-form__field" id="companionNationalityTextField" style="display:none;">
-										<span>Foreign type</span>
-										<input type="text" name="nationality" id="companionNationalityText" placeholder="e.g. American">
 									</label>
 							</div>
 							<div class="guest-form__row guest-form__row--two">
@@ -592,14 +584,10 @@
 									</label>
 									<label class="guest-form__field">
 										<span>Nationality</span>
-										<select name="check_in_primary_guest[nationality_option]" id="checkInPrimaryNationalityOption">
-											<option value="Filipino" selected>Filipino</option>
-											<option value="Foreign">Foreign</option>
+										<select name="check_in_primary_guest[is_foreigner]" id="checkInPrimaryIsForeigner">
+											<option value="0" selected>Filipino</option>
+											<option value="1">Foreigner</option>
 										</select>
-									</label>
-									<label class="guest-form__field" id="checkInPrimaryNationalityTextField" style="display:none;">
-										<span>Foreign type</span>
-										<input type="text" name="check_in_primary_guest[nationality]" id="checkInPrimaryNationalityText" placeholder="e.g. American">
 									</label>
 								</div>
 								<div class="guest-form__row guest-form__row--two">
@@ -631,6 +619,20 @@
 					</div>
 				</div>
 
+				{{-- Check Out Confirmation Modal --}}
+				<div class="guest-modal" id="checkOutConfirmModal" aria-hidden="true">
+					<div class="guest-modal__backdrop" data-close-check-out-confirm="true"></div>
+					<div class="guest-modal__content guest-modal__content--compact" role="dialog" aria-modal="true" aria-labelledby="checkOutConfirmTitle">
+						<button type="button" class="guest-modal__close" data-close-check-out-confirm="true" aria-label="Close confirmation">&times;</button>
+						<h3 id="checkOutConfirmTitle" class="guest-modal__title">Confirm Check Out</h3>
+						<p style="margin-bottom: 1.5rem; color: #666;">Are you sure you want to check out this reservation? This action cannot be undone.</p>
+						<div class="guest-form__actions">
+							<button type="button" class="guest-form__button--secondary" data-close-check-out-confirm="true">Cancel</button>
+							<button type="button" class="guest-form__button" id="confirmCheckOutBtn">Yes, Check Out</button>
+						</div>
+					</div>
+				</div>
+
 				{{-- Reservation Detail Modal --}}
 				<div class="guest-modal" id="reservationModal" aria-hidden="true">
 					<div class="guest-modal__backdrop" data-close-reservation-modal="true"></div>
@@ -639,6 +641,7 @@
 						<div class="guest-modal__header">
 							<h3 id="reservationModalTitle" class="guest-modal__title">Reservation Details</h3>
 							<span id="reservationModalStatus" class="guest-modal__role-badge"></span>
+							<button type="button" class="guest-form__button guest-form__button--small" id="reservationCheckOutBtn" style="margin-left: auto;">Check Out</button>
 						</div>
 						<div id="reservationModalBody" class="guest-modal__body"></div>
 						<div class="guest-form__actions" id="reservationModalActions">
@@ -706,14 +709,10 @@
 								</label>
 								<label class="guest-form__field">
 									<span>Nationality</span>
-									<select name="nationality_option" id="checkInCompanionNationalityOption">
-										<option value="Filipino" selected>Filipino</option>
-										<option value="Foreign">Foreign</option>
+									<select name="is_foreigner" id="checkInCompanionIsForeigner">
+										<option value="0" selected>Filipino</option>
+										<option value="1">Foreigner</option>
 									</select>
-								</label>
-								<label class="guest-form__field" id="checkInCompanionNationalityTextField" style="display:none;">
-									<span>Foreign type</span>
-									<input type="text" name="nationality" id="checkInCompanionNationalityText" placeholder="e.g. American">
 								</label>
 							</div>
 							<div class="guest-form__row guest-form__row--two">

@@ -303,14 +303,10 @@
                                     </label>
                                     <label class="guest-form__field">
                                         <span>Nationality</span>
-                                        <select name="check_in_primary_guest[nationality_option]" id="checkInPrimaryNationalityOption">
-                                            <option value="Filipino" selected>Filipino</option>
-                                            <option value="Foreign">Foreign</option>
+                                        <select name="check_in_primary_guest[is_foreigner]" id="checkInPrimaryIsForeigner">
+                                            <option value="0" selected>Filipino</option>
+                                            <option value="1">Foreigner</option>
                                         </select>
-                                    </label>
-                                    <label class="guest-form__field" id="checkInPrimaryNationalityTextField" style="display:none;">
-                                        <span>Foreign type</span>
-                                        <input type="text" name="check_in_primary_guest[nationality]" id="checkInPrimaryNationalityText" placeholder="e.g. American">
                                     </label>
                                 </div>
                                 <div class="guest-form__row guest-form__row--two">
@@ -328,7 +324,10 @@
                             <div class="guest-form__section">
                                 <div class="guest-form__section-header">
                                     <h4 class="guest-form__section-title">Companions</h4>
-                                    <button type="button" class="guest-form__secondary" id="checkInAddCompanionBtn">+ Add Companion</button>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button type="button" class="guest-form__secondary" id="checkInAddCompanionBtn">+ Add Single</button>
+                                        <button type="button" class="guest-form__secondary" id="checkInBulkCompanionBtn">+ Add Bulk</button>
+                                    </div>
                                 </div>
                                 <div id="checkInCompanionList" class="guest-companion-list"></div>
                                 <div id="checkInCompanionHiddenFields"></div>
@@ -399,14 +398,10 @@
                                 </label>
                                 <label class="guest-form__field">
                                     <span>Nationality</span>
-                                    <select name="nationality_option" id="checkInCompanionNationalityOption">
-                                        <option value="Filipino" selected>Filipino</option>
-                                        <option value="Foreign">Foreign</option>
+                                    <select name="is_foreigner" id="checkInCompanionIsForeigner">
+                                        <option value="0" selected>Filipino</option>
+                                        <option value="1">Foreigner</option>
                                     </select>
-                                </label>
-                                <label class="guest-form__field" id="checkInCompanionNationalityTextField" style="display:none;">
-                                    <span>Foreign type</span>
-                                    <input type="text" name="nationality" id="checkInCompanionNationalityText" placeholder="e.g. American">
                                 </label>
                             </div>
                             <div class="guest-form__row guest-form__row--two">
@@ -422,6 +417,64 @@
                             <div class="guest-form__actions">
                                 <button type="button" class="guest-form__secondary" data-close-check-in-companion-modal="true">Cancel</button>
                                 <button type="submit" class="guest-form__button">Add Companion</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="guest-modal guest-modal--compact" id="bulkCompanionPreviewModal" aria-hidden="true">
+                    <div class="guest-modal__backdrop" data-close-bulk-preview-modal="true"></div>
+                    <div class="guest-modal__content guest-modal__content--compact" role="dialog" aria-modal="true" aria-labelledby="bulkCompanionPreviewTitle">
+                        <button type="button" class="guest-modal__close" data-close-bulk-preview-modal="true" aria-label="Close preview">&times;</button>
+                        <h3 id="bulkCompanionPreviewTitle" class="guest-modal__title">Confirm Bulk Companions</h3>
+                        <div id="bulkCompanionPreviewBody" class="guest-modal__body"></div>
+                        <div class="guest-form__actions">
+                            <button type="button" class="guest-form__secondary" data-close-bulk-preview-modal="true">Cancel</button>
+                            <button type="button" class="guest-form__button" id="confirmBulkCompanionsBtn">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guest-modal guest-modal--compact" id="bulkCompanionModal" aria-hidden="true">
+                    <div class="guest-modal__backdrop" data-close-bulk-companion-modal="true"></div>
+                    <div class="guest-modal__content guest-modal__content--compact" role="dialog" aria-modal="true" aria-labelledby="bulkCompanionModalTitle">
+                        <button type="button" class="guest-modal__close" data-close-bulk-companion-modal="true" aria-label="Close bulk companion form">&times;</button>
+                        <h3 id="bulkCompanionModalTitle" class="guest-modal__title">Add Companions in Bulk</h3>
+                        <form id="bulkCompanionForm" class="guest-form" action="#">
+                            <div class="guest-form__row guest-form__row--two">
+                                <label class="guest-form__field">
+                                    <span>Gender</span>
+                                    <select name="gender" id="bulkCompanionGender">
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
+                                </label>
+                                <label class="guest-form__field">
+                                    <span>Nationality</span>
+                                    <select name="is_foreigner" id="bulkCompanionIsForeigner">
+                                        <option value="0" selected>Filipino</option>
+                                        <option value="1">Foreigner</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="guest-form__row guest-form__row--two">
+                                <label class="guest-form__field">
+                                    <span>Age Group</span>
+                                    <select name="age_group" id="bulkCompanionAgeGroup">
+                                        <option value="0-12">Kids (0-12)</option>
+                                        <option value="13-17">Teens (13-17)</option>
+                                        <option value="18-59">Adults (18-59)</option>
+                                        <option value="60+">Seniors (60+)</option>
+                                    </select>
+                                </label>
+                                <label class="guest-form__field">
+                                    <span>Quantity</span>
+                                    <input type="number" name="quantity" id="bulkCompanionQuantity" min="1" max="50" value="1" required>
+                                </label>
+                            </div>
+                            <div class="guest-form__actions">
+                                <button type="button" class="guest-form__secondary" data-close-bulk-companion-modal="true">Cancel</button>
+                                <button type="submit" class="guest-form__button" id="generateCompanionsBtn">Generate Companions</button>
                             </div>
                         </form>
                     </div>

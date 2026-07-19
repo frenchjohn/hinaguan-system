@@ -18,14 +18,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const scanQrCloseButtons = document.querySelectorAll('[data-close-scan-modal="true"]');
     const checkInCompanionCloseButtons = document.querySelectorAll('[data-close-check-in-companion-modal="true"]');
     const checkInAddCompanionBtn = document.getElementById('checkInAddCompanionBtn');
+    const checkInBulkCompanionBtn = document.getElementById('checkInBulkCompanionBtn');
     const checkInCompanionList = document.getElementById('checkInCompanionList');
     const checkInCompanionHiddenFields = document.getElementById('checkInCompanionHiddenFields');
-    const checkInPrimaryNationalityOption = document.getElementById('checkInPrimaryNationalityOption');
-    const checkInPrimaryNationalityTextField = document.getElementById('checkInPrimaryNationalityTextField');
-    const checkInPrimaryNationalityText = document.getElementById('checkInPrimaryNationalityText');
-    const checkInCompanionNationalityOption = document.getElementById('checkInCompanionNationalityOption');
-    const checkInCompanionNationalityTextField = document.getElementById('checkInCompanionNationalityTextField');
-    const checkInCompanionNationalityText = document.getElementById('checkInCompanionNationalityText');
+    const checkInPrimaryIsForeigner = document.getElementById('checkInPrimaryIsForeigner');
+    const checkInCompanionIsForeigner = document.getElementById('checkInCompanionIsForeigner');
+    const bulkCompanionModal = document.getElementById('bulkCompanionModal');
+    const bulkCompanionForm = document.getElementById('bulkCompanionForm');
+    const bulkCompanionCloseButtons = document.querySelectorAll('[data-close-bulk-companion-modal="true"]');
+    const bulkCompanionPreviewModal = document.getElementById('bulkCompanionPreviewModal');
+    const bulkCompanionPreviewBody = document.getElementById('bulkCompanionPreviewBody');
+    const bulkCompanionPreviewCloseButtons = document.querySelectorAll('[data-close-bulk-preview-modal="true"]');
+    const confirmBulkCompanionsBtn = document.getElementById('confirmBulkCompanionsBtn');
+    let pendingBulkCompanion = null;
     const tableBody = document.getElementById('reservationTableBody');
     const rows = Array.from(tableBody?.querySelectorAll('.reservation-row') ?? []);
     const searchInput = document.getElementById('reservationSearchInput');
@@ -56,45 +61,46 @@ document.addEventListener('DOMContentLoaded', () => {
     let existingReservationGuests = [];
     let primaryGuestToUpdate = null;
     let currentModalReservationId = null;
-
-    const toggleCheckInNationalityFields = () => {
-        const primaryForeign = checkInPrimaryNationalityOption?.value === 'Foreign';
-        if (checkInPrimaryNationalityTextField) {
-            checkInPrimaryNationalityTextField.style.display = primaryForeign ? 'block' : 'none';
-        }
-        if (checkInPrimaryNationalityText && !primaryForeign) {
-            checkInPrimaryNationalityText.value = '';
-        }
-
-        const companionForeign = checkInCompanionNationalityOption?.value === 'Foreign';
-        if (checkInCompanionNationalityTextField) {
-            checkInCompanionNationalityTextField.style.display = companionForeign ? 'block' : 'none';
-        }
-        if (checkInCompanionNationalityText && !companionForeign) {
-            checkInCompanionNationalityText.value = '';
-        }
-    };
-
-    checkInPrimaryNationalityOption?.addEventListener('change', toggleCheckInNationalityFields);
-    checkInCompanionNationalityOption?.addEventListener('change', toggleCheckInNationalityFields);
+    let companionCount = 0;
+    let bulkCompanionGroups = [];
 
     const renderCheckInCompanions = () => {
         checkInCompanionList.innerHTML = '';
         checkInCompanionHiddenFields.innerHTML = '';
 
-        if (!checkInCompanions.length) {
+        if (!bulkCompanionGroups.length) {
             checkInCompanionList.innerHTML = '<p class="guest-empty">No companions added yet.</p>';
             return;
         }
 
-        checkInCompanions.forEach((companion, index) => {
-            const name = [companion.first_name, companion.middle_name, companion.last_name].filter(Boolean).join(' ').trim() || 'Unnamed companion';
+        bulkCompanionGroups.forEach((group, index) => {
+            const nationality = group.is_foreigner ? 'Foreigner' : 'Filipino';
             const item = document.createElement('div');
             item.className = 'guest-companion-pill';
+            item.style.display = 'flex';
+            item.style.alignItems = 'center';
+            item.style.gap = '0.5rem';
             
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = name;
-            item.appendChild(nameSpan);
+            const infoSpan = document.createElement('span');
+            infoSpan.textContent = `${group.gender} - ${nationality} - ${group.age_group} - `;
+            item.appendChild(infoSpan);
+            
+            const quantityInput = document.createElement('input');
+            quantityInput.type = 'number';
+            quantityInput.min = '1';
+            quantityInput.max = '500';
+            quantityInput.value = group.quantity;
+            quantityInput.style.width = '60px';
+            quantityInput.style.padding = '0.25rem';
+            quantityInput.style.border = '1px solid #ccc';
+            quantityInput.style.borderRadius = '0.25rem';
+            quantityInput.addEventListener('change', (e) => {
+                const newQuantity = parseInt(e.target.value, 10) || 1;
+                group.quantity = Math.min(Math.max(newQuantity, 1), 500);
+                e.target.value = group.quantity;
+                renderCheckInCompanions();
+            });
+            item.appendChild(quantityInput);
             
             const deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
@@ -102,11 +108,29 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteBtn.textContent = '×';
             deleteBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                checkInCompanions.splice(index, 1);
+                bulkCompanionGroups.splice(index, 1);
                 renderCheckInCompanions();
             });
             item.appendChild(deleteBtn);
             checkInCompanionList.appendChild(item);
+        });
+
+        // Generate individual companions from bulk groups for form submission
+        checkInCompanions = [];
+        bulkCompanionGroups.forEach(group => {
+            for (let i = 0; i < group.quantity; i++) {
+                companionCount++;
+                checkInCompanions.push({
+                    first_name: `Reservation ${pendingReservationId || 'Guest'}`,
+                    middle_name: '',
+                    last_name: `C${companionCount}`,
+                    age: group.age_group,
+                    gender: group.gender,
+                    is_foreigner: group.is_foreigner,
+                    phone: '',
+                    email: '',
+                });
+            }
         });
 
         checkInCompanions.forEach((companion, index) => {
@@ -122,7 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const openCheckInCompanionModal = () => {
         checkInCompanionForm.reset();
-        toggleCheckInNationalityFields();
         if (checkInCompanionModal) {
             checkInCompanionModal.classList.add('is-open');
             checkInCompanionModal.setAttribute('aria-hidden', 'false');
@@ -136,6 +159,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const openBulkCompanionModal = () => {
+        bulkCompanionForm.reset();
+        if (bulkCompanionModal) {
+            bulkCompanionModal.classList.add('is-open');
+            bulkCompanionModal.setAttribute('aria-hidden', 'false');
+        }
+    };
+
+    const closeBulkCompanionModal = () => {
+        if (bulkCompanionModal) {
+            bulkCompanionModal.classList.remove('is-open');
+            bulkCompanionModal.setAttribute('aria-hidden', 'true');
+        }
+    };
+
+    const openBulkCompanionPreviewModal = (companionData) => {
+        pendingBulkCompanion = companionData;
+        const nationality = companionData.is_foreigner ? 'Foreigner' : 'Filipino';
+        const html = `
+            <div style="margin-bottom: 1rem;">
+                <p><strong>Gender:</strong> ${companionData.gender}</p>
+                <p><strong>Nationality:</strong> ${nationality}</p>
+                <p><strong>Age Group:</strong> ${companionData.age_group}</p>
+                <p><strong>Quantity:</strong> ${companionData.quantity}</p>
+            </div>
+            <p style="color: #666; font-size: 0.875rem;">Are you sure you want to add ${companionData.quantity} companion(s) with these details?</p>
+        `;
+        bulkCompanionPreviewBody.innerHTML = html;
+        if (bulkCompanionPreviewModal) {
+            bulkCompanionPreviewModal.classList.add('is-open');
+            bulkCompanionPreviewModal.setAttribute('aria-hidden', 'false');
+        }
+    };
+
+    const closeBulkCompanionPreviewModal = () => {
+        pendingBulkCompanion = null;
+        if (bulkCompanionPreviewModal) {
+            bulkCompanionPreviewModal.classList.remove('is-open');
+            bulkCompanionPreviewModal.setAttribute('aria-hidden', 'true');
+        }
+    };
+
+    const getAgeFromGroup = (ageGroup) => {
+        const ageMap = {
+            '0-12': 6,
+            '13-17': 15,
+            '18-59': 30,
+            '60+': 65
+        };
+        return ageMap[ageGroup] || 30;
+    };
+
     const fillFormWithGuestData = (guestData, namePrefix) => {
         if (!guestData || !checkInForm) return;
 
@@ -144,8 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const lastNameInput = checkInForm.querySelector(`input[name="${namePrefix}[last_name]"]`);
         const ageInput = checkInForm.querySelector(`input[name="${namePrefix}[age]"]`);
         const genderSelect = checkInForm.querySelector(`select[name="${namePrefix}[gender]"]`);
-        const nationalityOptionSelect = checkInForm.querySelector(`select[name="${namePrefix}[nationality_option]"]`);
-        const nationalityInput = checkInForm.querySelector(`input[name="${namePrefix}[nationality]"]`);
+        const isForeignerSelect = checkInForm.querySelector(`select[name="${namePrefix}[is_foreigner]"]`);
         const phoneInput = checkInForm.querySelector(`input[name="${namePrefix}[phone]"]`);
         const emailInput = checkInForm.querySelector(`input[name="${namePrefix}[email]"]`);
 
@@ -155,11 +229,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ageInput) ageInput.value = guestData.age || '';
         if (genderSelect) genderSelect.value = guestData.gender || 'Male';
         
-        if (nationalityOptionSelect) {
-            nationalityOptionSelect.value = guestData.is_foreigner ? 'Foreign' : 'Filipino';
-        }
-        if (nationalityInput) {
-            nationalityInput.value = guestData.is_foreigner ? (guestData.nationality || '') : '';
+        if (isForeignerSelect) {
+            isForeignerSelect.value = guestData.is_foreigner ? '1' : '0';
         }
         
         if (phoneInput) phoneInput.value = guestData.phone || '';
@@ -186,6 +257,67 @@ document.addEventListener('DOMContentLoaded', () => {
         openCheckInCompanionModal();
     });
 
+    checkInBulkCompanionBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openBulkCompanionModal();
+    });
+
+    bulkCompanionCloseButtons.forEach((button) => {
+        button.addEventListener('click', closeBulkCompanionModal);
+    });
+
+    bulkCompanionPreviewCloseButtons.forEach((button) => {
+        button.addEventListener('click', closeBulkCompanionPreviewModal);
+    });
+
+    bulkCompanionForm?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const formData = new FormData(bulkCompanionForm);
+        const gender = formData.get('gender');
+        const isForeigner = formData.get('is_foreigner') === '1';
+        const ageGroup = formData.get('age_group');
+        const quantity = parseInt(formData.get('quantity'), 10) || 1;
+
+        // Check for duplicates
+        const duplicateIndex = bulkCompanionGroups.findIndex(
+            group => group.gender === gender && 
+                    group.is_foreigner === isForeigner && 
+                    group.age_group === ageGroup
+        );
+
+        if (duplicateIndex !== -1) {
+            // Show duplicate modal
+            alert('This companion group already exists. Please edit the existing group instead.');
+            closeBulkCompanionModal();
+            return;
+        }
+
+        // Open preview modal instead of directly adding
+        openBulkCompanionPreviewModal({
+            gender,
+            is_foreigner: isForeigner,
+            age_group: ageGroup,
+            quantity,
+        });
+        closeBulkCompanionModal();
+    });
+
+    confirmBulkCompanionsBtn?.addEventListener('click', () => {
+        if (!pendingBulkCompanion) return;
+
+        bulkCompanionGroups.push({
+            gender: pendingBulkCompanion.gender,
+            is_foreigner: pendingBulkCompanion.is_foreigner,
+            age_group: pendingBulkCompanion.age_group,
+            quantity: pendingBulkCompanion.quantity,
+        });
+
+        renderCheckInCompanions();
+        closeBulkCompanionPreviewModal();
+    });
+
     checkInCompanionForm?.addEventListener('submit', (e) => {
         e.preventDefault();
         const formData = new FormData(checkInCompanionForm);
@@ -195,8 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
             last_name: formData.get('last_name'),
             age: formData.get('age'),
             gender: formData.get('gender'),
-            nationality_option: formData.get('nationality_option'),
-            nationality: formData.get('nationality_option') === 'Foreign' ? formData.get('nationality') : formData.get('nationality_option'),
+            is_foreigner: formData.get('is_foreigner') === '1',
             phone: formData.get('phone'),
             email: formData.get('email'),
         };
@@ -243,7 +374,6 @@ document.addEventListener('DOMContentLoaded', () => {
         checkInForm.querySelector('input[name="check_in_guest_mode"][value="with_primary"]').checked = true;
         toggleCheckInPrimaryGuestSection();
         renderCheckInCompanions();
-        toggleCheckInNationalityFields();
         if (checkInModal) {
             checkInModal.classList.add('is-open');
             checkInModal.setAttribute('aria-hidden', 'false');
@@ -1039,8 +1169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             last_name: formData.get('check_in_primary_guest[last_name]'),
             age: formData.get('check_in_primary_guest[age]'),
             gender: formData.get('check_in_primary_guest[gender]'),
-            nationality_option: formData.get('check_in_primary_guest[nationality_option]'),
-            nationality: formData.get('check_in_primary_guest[nationality_option]') === 'Foreign' ? formData.get('check_in_primary_guest[nationality]') : formData.get('check_in_primary_guest[nationality_option]'),
+            is_foreigner: formData.get('check_in_primary_guest[is_foreigner]') === '1',
             phone: formData.get('check_in_primary_guest[phone]'),
             email: formData.get('check_in_primary_guest[email]'),
         } : null;

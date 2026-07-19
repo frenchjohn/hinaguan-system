@@ -18,7 +18,6 @@ class Customer extends Model
         'last_name',
         'age',
         'gender',
-        'nationality',
         'is_foreigner',
         'phone',
         'email',

@@ -1016,7 +1016,6 @@ Route::prefix('staff')->name('staff.')->group(function () {
                             'last_name' => $customer?->last_name,
                             'age' => $customer?->age,
                             'gender' => $customer?->gender,
-                            'nationality' => $customer?->nationality,
                             'is_foreigner' => (bool) ($customer?->is_foreigner ?? false),
                             'phone' => $customer?->phone,
                             'email' => $customer?->email,
@@ -1158,7 +1157,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
                             'last_name' => $customer?->last_name,
                             'age' => $customer?->age,
                             'gender' => $customer?->gender,
-                            'nationality' => $customer?->nationality,
+                            'is_foreigner' => (bool) ($customer?->is_foreigner ?? false),
                             'phone' => $customer?->phone,
                             'email' => $customer?->email,
                         ],
@@ -1188,7 +1187,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
                 'last_name' => $customer->last_name,
                 'age' => $customer->age,
                 'gender' => $customer->gender,
-                'nationality' => $customer->nationality,
+                'is_foreigner' => (bool) $customer->is_foreigner,
                 'phone' => $customer->phone,
                 'email' => $customer->email,
                 'reservation_guests' => $customer->reservationGuests->map(function ($reservationGuest) {
@@ -1279,7 +1278,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
                             'last_name' => $customer?->last_name,
                             'age' => $customer?->age,
                             'gender' => $customer?->gender,
-                            'nationality' => $customer?->nationality,
+                            'is_foreigner' => (bool) ($customer?->is_foreigner ?? false),
                             'phone' => $customer?->phone,
                             'email' => $customer?->email,
                         ],
@@ -1335,7 +1334,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
                 'last_name' => $guest->customer->last_name,
                 'age' => $guest->customer->age,
                 'gender' => $guest->customer->gender,
-                'nationality' => $guest->customer->nationality,
+                'is_foreigner' => (bool) $guest->customer->is_foreigner,
                 'checked_out_at' => $guest->checked_out_at,
                 'reservation_guests' => [[
                     'reservation' => $guest->reservation ? [
@@ -1390,7 +1389,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
                             'last_name' => $guest->customer->last_name,
                             'age' => $guest->customer->age,
                             'gender' => $guest->customer->gender,
-                            'nationality' => $guest->customer->nationality,
+                            'is_foreigner' => (bool) $guest->customer->is_foreigner,
                         ] : null,
                     ];
                 })->toArray(),
@@ -1426,8 +1425,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
             'primary_guest.last_name' => ['nullable', 'string', 'max:255'],
             'primary_guest.age' => ['nullable', 'integer', 'min:0'],
             'primary_guest.gender' => ['nullable', 'in:Male,Female'],
-            'primary_guest.nationality_option' => ['nullable', 'in:Filipino,Foreign'],
-            'primary_guest.nationality' => ['nullable', 'string', 'max:255'],
+            'primary_guest.is_foreigner' => ['nullable', 'boolean'],
             'primary_guest.phone' => ['nullable', 'string', 'max:255'],
             'primary_guest.email' => ['nullable', 'email', 'max:255'],
             'companions' => ['nullable', 'array'],
@@ -1436,8 +1434,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
             'companions.*.last_name' => ['required_with:companions.*.first_name', 'string', 'max:255'],
             'companions.*.age' => ['nullable', 'integer', 'min:0'],
             'companions.*.gender' => ['nullable', 'in:Male,Female'],
-            'companions.*.nationality_option' => ['nullable', 'in:Filipino,Foreign'],
-            'companions.*.nationality' => ['nullable', 'string', 'max:255'],
+            'companions.*.is_foreigner' => ['nullable', 'boolean'],
             'companions.*.phone' => ['nullable', 'string', 'max:255'],
             'companions.*.email' => ['nullable', 'email', 'max:255'],
             'selected_amenities' => ['nullable', 'array'],
@@ -1474,10 +1471,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
             $primaryEmail = trim((string) ($primaryGuestData['email'] ?? '')) ?: null;
             $primaryPhone = trim((string) ($primaryGuestData['phone'] ?? '')) ?: null;
 
-            $primaryNationality = $primaryGuestData['nationality_option'] === 'Foreign'
-                ? trim((string) ($primaryGuestData['nationality'] ?? '')) ?: 'Foreign'
-                : 'Filipino';
-            $primaryIsForeigner = $primaryGuestData['nationality_option'] === 'Foreign';
+            $primaryIsForeigner = (bool) ($primaryGuestData['is_foreigner'] ?? false);
 
             $primaryCustomer = Customer::firstOrCreate(
                 [
@@ -1492,7 +1486,6 @@ Route::prefix('staff')->name('staff.')->group(function () {
                     'last_name' => $primaryLastName,
                     'age' => $primaryGuestData['age'] ?? null,
                     'gender' => $primaryGuestData['gender'] ?? 'Male',
-                    'nationality' => $primaryNationality,
                     'is_foreigner' => $primaryIsForeigner,
                     'phone' => $primaryPhone,
                     'email' => $primaryEmail,
@@ -1514,10 +1507,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
             $companionEmail = trim((string) ($companionData['email'] ?? '')) ?: null;
             $companionPhone = trim((string) ($companionData['phone'] ?? '')) ?: null;
 
-            $companionNationality = $companionData['nationality_option'] === 'Foreign'
-                ? trim((string) ($companionData['nationality'] ?? '')) ?: 'Foreign'
-                : 'Filipino';
-            $companionIsForeigner = $companionData['nationality_option'] === 'Foreign';
+            $companionIsForeigner = (bool) ($companionData['is_foreigner'] ?? false);
 
             $companionCustomer = Customer::firstOrCreate(
                 [
@@ -1532,7 +1522,6 @@ Route::prefix('staff')->name('staff.')->group(function () {
                     'last_name' => $companionLastName,
                     'age' => $companionData['age'] ?? null,
                     'gender' => $companionData['gender'] ?? 'Male',
-                    'nationality' => $companionNationality,
                     'is_foreigner' => $companionIsForeigner,
                     'phone' => $companionPhone,
                     'email' => $companionEmail,
@@ -1573,20 +1562,18 @@ Route::prefix('staff')->name('staff.')->group(function () {
             'primary_guest.first_name' => ['nullable', 'string', 'max:255'],
             'primary_guest.middle_name' => ['nullable', 'string', 'max:255'],
             'primary_guest.last_name' => ['nullable', 'string', 'max:255'],
-            'primary_guest.age' => ['nullable', 'integer', 'min:0'],
+            'primary_guest.age' => ['nullable', 'string', 'max:255'],
             'primary_guest.gender' => ['nullable', 'in:Male,Female'],
-            'primary_guest.nationality_option' => ['nullable', 'in:Filipino,Foreign'],
-            'primary_guest.nationality' => ['nullable', 'string', 'max:255'],
+            'primary_guest.is_foreigner' => ['nullable', 'boolean'],
             'primary_guest.phone' => ['nullable', 'string', 'max:255'],
             'primary_guest.email' => ['nullable', 'email', 'max:255'],
             'companions' => ['nullable', 'array'],
             'companions.*.first_name' => ['required_with:companions.*.last_name', 'string', 'max:255'],
             'companions.*.middle_name' => ['nullable', 'string', 'max:255'],
             'companions.*.last_name' => ['required_with:companions.*.first_name', 'string', 'max:255'],
-            'companions.*.age' => ['nullable', 'integer', 'min:0'],
+            'companions.*.age' => ['nullable', 'string', 'max:255'],
             'companions.*.gender' => ['nullable', 'in:Male,Female'],
-            'companions.*.nationality_option' => ['nullable', 'in:Filipino,Foreign'],
-            'companions.*.nationality' => ['nullable', 'string', 'max:255'],
+            'companions.*.is_foreigner' => ['nullable', 'boolean'],
             'companions.*.phone' => ['nullable', 'string', 'max:255'],
             'companions.*.email' => ['nullable', 'email', 'max:255'],
         ]);
@@ -1604,10 +1591,7 @@ Route::prefix('staff')->name('staff.')->group(function () {
             $primaryEmail = trim((string) ($primaryGuestData['email'] ?? '')) ?: null;
             $primaryPhone = trim((string) ($primaryGuestData['phone'] ?? '')) ?: null;
 
-            $primaryNationality = $primaryGuestData['nationality_option'] === 'Foreign'
-                ? trim((string) ($primaryGuestData['nationality'] ?? '')) ?: 'Foreign'
-                : 'Filipino';
-            $primaryIsForeigner = $primaryGuestData['nationality_option'] === 'Foreign';
+            $primaryIsForeigner = (bool) ($primaryGuestData['is_foreigner'] ?? false);
 
             // If primary_guest_id is provided, update the existing customer
             if ($data['primary_guest_id']) {
@@ -1619,7 +1603,6 @@ Route::prefix('staff')->name('staff.')->group(function () {
                         'last_name' => $primaryLastName,
                         'age' => $primaryGuestData['age'] ?? null,
                         'gender' => $primaryGuestData['gender'] ?? 'Male',
-                        'nationality' => $primaryNationality,
                         'is_foreigner' => $primaryIsForeigner,
                         'phone' => $primaryPhone,
                         'email' => $primaryEmail,
@@ -1640,7 +1623,6 @@ Route::prefix('staff')->name('staff.')->group(function () {
                         'last_name' => $primaryLastName,
                         'age' => $primaryGuestData['age'] ?? null,
                         'gender' => $primaryGuestData['gender'] ?? 'Male',
-                        'nationality' => $primaryNationality,
                         'is_foreigner' => $primaryIsForeigner,
                         'phone' => $primaryPhone,
                         'email' => $primaryEmail,
@@ -1664,30 +1646,41 @@ Route::prefix('staff')->name('staff.')->group(function () {
             $companionEmail = trim((string) ($companionData['email'] ?? '')) ?: null;
             $companionPhone = trim((string) ($companionData['phone'] ?? '')) ?: null;
 
-            $companionNationality = $companionData['nationality_option'] === 'Foreign'
-                ? trim((string) ($companionData['nationality'] ?? '')) ?: 'Foreign'
-                : 'Filipino';
-            $companionIsForeigner = $companionData['nationality_option'] === 'Foreign';
+            $companionIsForeigner = (bool) ($companionData['is_foreigner'] ?? false);
 
-            $companionCustomer = Customer::firstOrCreate(
-                [
-                    'first_name' => $companionFirstName,
-                    'last_name' => $companionLastName,
-                    'email' => $companionEmail,
-                    'phone' => $companionPhone,
-                ],
-                [
+            // For bulk companions without email/phone, create a new customer each time
+            if (empty($companionEmail) && empty($companionPhone)) {
+                $companionCustomer = Customer::create([
                     'first_name' => $companionFirstName,
                     'middle_name' => $companionData['middle_name'] ?? null,
                     'last_name' => $companionLastName,
                     'age' => $companionData['age'] ?? null,
                     'gender' => $companionData['gender'] ?? 'Male',
-                    'nationality' => $companionNationality,
                     'is_foreigner' => $companionIsForeigner,
                     'phone' => $companionPhone,
                     'email' => $companionEmail,
-                ]
-            );
+                ]);
+            } else {
+                // For companions with email/phone, use firstOrCreate to avoid duplicates
+                $companionCustomer = Customer::firstOrCreate(
+                    [
+                        'first_name' => $companionFirstName,
+                        'last_name' => $companionLastName,
+                        'email' => $companionEmail,
+                        'phone' => $companionPhone,
+                    ],
+                    [
+                        'first_name' => $companionFirstName,
+                        'middle_name' => $companionData['middle_name'] ?? null,
+                        'last_name' => $companionLastName,
+                        'age' => $companionData['age'] ?? null,
+                        'gender' => $companionData['gender'] ?? 'Male',
+                        'is_foreigner' => $companionIsForeigner,
+                        'phone' => $companionPhone,
+                        'email' => $companionEmail,
+                    ]
+                );
+            }
 
             ReservationGuest::create([
                 'reservation_id' => $reservation->id,
@@ -1817,7 +1810,6 @@ Route::prefix('staff')->name('staff.')->group(function () {
                             'last_name' => $customer->last_name,
                             'age' => $customer->age,
                             'gender' => $customer->gender,
-                            'nationality' => $customer->nationality,
                             'is_foreigner' => $customer->is_foreigner,
                             'phone' => $customer->phone,
                             'email' => $customer->email,

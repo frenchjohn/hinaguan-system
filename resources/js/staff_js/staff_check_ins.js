@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const reservationModalBody = document.getElementById('reservationModalBody');
     const reservationCheckOutBtn = document.getElementById('reservationCheckOutBtn');
     const reservationCloseButtons = document.querySelectorAll('[data-close-reservation-modal="true"]');
+    const checkOutConfirmModal = document.getElementById('checkOutConfirmModal');
+    const confirmCheckOutBtn = document.getElementById('confirmCheckOutBtn');
+    const checkOutConfirmCloseButtons = document.querySelectorAll('[data-close-check-out-confirm="true"]');
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     const reservationData = window.staffReservationData || {};
     const guestData = window.staffGuestData || {};
@@ -62,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="padding: 1rem; background-color: var(--hp-cream, #f5f5f5); border-radius: 0.5rem;">
                     ${primaryGuest && primaryGuest.customer ? `
                         <div><strong>${primaryGuest.customer.first_name} ${primaryGuest.customer.middle_name || ''} ${primaryGuest.customer.last_name}</strong></div>
-                        <div style="font-size: 0.875rem; color: #666;">Age: ${primaryGuest.customer.age || 'N/A'} | Gender: ${primaryGuest.customer.gender || 'N/A'} | Nationality: ${primaryGuest.customer.nationality || 'N/A'}</div>
+                        <div style="font-size: 0.875rem; color: #666;">Age: ${primaryGuest.customer.age || 'N/A'} | Gender: ${primaryGuest.customer.gender || 'N/A'} | Status: ${primaryGuest.customer.is_foreigner ? 'Foreigner' : 'Filipino'}</div>
                         <div style="font-size: 0.875rem; color: #666;">Phone: ${primaryGuest.customer.phone || 'N/A'} | Email: ${primaryGuest.customer.email || 'N/A'}</div>
                     ` : '<div>No main guest assigned</div>'}
                 </div>
@@ -76,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${companions.map(c => `
                         <div style="padding: 0.75rem; background-color: var(--hp-cream, #f5f5f5); border-radius: 0.5rem; margin-bottom: 0.5rem;">
                             <div><strong>${c.customer.first_name} ${c.customer.middle_name || ''} ${c.customer.last_name}</strong></div>
-                            <div style="font-size: 0.875rem; color: #666;">Age: ${c.customer.age || 'N/A'} | Gender: ${c.customer.gender || 'N/A'} | Nationality: ${c.customer.nationality || 'N/A'}</div>
+                            <div style="font-size: 0.875rem; color: #666;">Age: ${c.customer.age || 'N/A'} | Gender: ${c.customer.gender || 'N/A'} | Status: ${c.customer.is_foreigner ? 'Foreigner' : 'Filipino'}</div>
                             <div style="font-size: 0.875rem; color: #666;">Phone: ${c.customer.phone || 'N/A'} | Email: ${c.customer.email || 'N/A'}</div>
                         </div>
                     `).join('')}
@@ -180,6 +183,20 @@ document.addEventListener('DOMContentLoaded', () => {
         reservationModal.setAttribute('aria-hidden', 'true');
     };
 
+    const openCheckOutConfirmModal = () => {
+        if (checkOutConfirmModal) {
+            checkOutConfirmModal.classList.add('is-open');
+            checkOutConfirmModal.setAttribute('aria-hidden', 'false');
+        }
+    };
+
+    const closeCheckOutConfirmModal = () => {
+        if (checkOutConfirmModal) {
+            checkOutConfirmModal.classList.remove('is-open');
+            checkOutConfirmModal.setAttribute('aria-hidden', 'true');
+        }
+    };
+
     // Reservation row click handlers
     const reservationRows = reservationTableBody?.querySelectorAll('.reservation-row') ?? [];
     reservationRows.forEach(row => {
@@ -228,6 +245,53 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', closeReservationModal);
     });
 
+    checkOutConfirmCloseButtons.forEach(button => {
+        button.addEventListener('click', closeCheckOutConfirmModal);
+    });
+
+    // Reservation checkout - open confirmation modal
+    reservationCheckOutBtn?.addEventListener('click', () => {
+        if (!currentReservationId) return;
+        openCheckOutConfirmModal();
+    });
+
+    // Confirm checkout - actually perform the action
+    confirmCheckOutBtn?.addEventListener('click', async () => {
+        if (!currentReservationId) return;
+
+        const submitButton = confirmCheckOutBtn;
+        submitButton.disabled = true;
+        submitButton.textContent = 'Checking out...';
+
+        try {
+            const response = await fetch(`/staff/reservations/${currentReservationId}/check-out`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({}),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                closeCheckOutConfirmModal();
+                closeReservationModal();
+                alert('Reservation checked out successfully!');
+                location.reload();
+            } else {
+                throw new Error(data.message || 'Failed to check out reservation');
+            }
+        } catch (error) {
+            console.error('Check out error:', error);
+            alert('Error checking out reservation: ' + error.message);
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Yes, Check Out';
+        }
+    });
+
     // Guest modal functionality
     const guestModal = document.getElementById('guestModal');
     const guestModalBody = document.getElementById('guestModalBody');
@@ -265,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span style="display: inline-flex; align-items: center; padding: 0.25rem 0.6rem; border-radius: 999px; background-color: ${isMainGuest ? 'rgba(200, 164, 93, 0.15)' : 'rgba(26, 58, 31, 0.15)'}; color: ${isMainGuest ? '#c8a45d' : 'var(--hp-green)'}; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-left: 0.5rem;">${isMainGuest ? 'Main Guest' : 'Companion'}</span>
                         </div>
                         <div style="font-size: 0.85rem; color: #666; margin-bottom: 0.25rem;">
-                            Age: ${customer.age || 'N/A'} | Gender: ${customer.gender || 'N/A'} | Nationality: ${customer.nationality || 'N/A'}
+                            Age: ${customer.age || 'N/A'} | Gender: ${customer.gender || 'N/A'} | Status: ${customer.is_foreigner ? 'Foreigner' : 'Filipino'}
                         </div>
                         <div style="font-size: 0.85rem; color: #666;">
                             Phone: ${customer.phone || 'N/A'} | Email: ${customer.email || 'N/A'}
@@ -328,8 +392,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="guest-value">${customer.gender || 'N/A'}</span>
                         </div>
                         <div>
-                            <span class="guest-label">Nationality</span>
-                            <span class="guest-value">${customer.nationality || 'N/A'}</span>
+                            <span class="guest-label">Status</span>
+                            <span class="guest-value">${customer.is_foreigner ? 'Foreigner' : 'Filipino'}</span>
                         </div>
                         <div>
                             <span class="guest-label">Phone</span>
@@ -493,8 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const companionForm = document.getElementById('companionForm');
     const companionList = document.getElementById('companionList');
     const companionHiddenFields = document.getElementById('companionHiddenFields');
-    const companionNationalityOption = document.getElementById('companionNationalityOption');
-    const companionNationalityTextField = document.getElementById('companionNationalityTextField');
+    const companionIsForeigner = document.getElementById('companionIsForeigner');
 
     const openCompanionModal = () => {
         companionModal.classList.add('is-open');
@@ -509,10 +572,6 @@ document.addEventListener('DOMContentLoaded', () => {
     addCompanionBtn?.addEventListener('click', openCompanionModal);
     companionCloseButtons.forEach(button => {
         button.addEventListener('click', closeCompanionModal);
-    });
-
-    companionNationalityOption?.addEventListener('change', (e) => {
-        companionNationalityTextField.style.display = e.target.value === 'Foreign' ? 'flex' : 'none';
     });
 
     companionForm?.addEventListener('submit', (e) => {
@@ -536,8 +595,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <input type="hidden" name="companions[${companionCount}][last_name]" value="${companionData.last_name}">
             <input type="hidden" name="companions[${companionCount}][age]" value="${companionData.age || ''}">
             <input type="hidden" name="companions[${companionCount}][gender]" value="${companionData.gender || ''}">
-            <input type="hidden" name="companions[${companionCount}][nationality_option]" value="${companionData.nationality_option || ''}">
-            <input type="hidden" name="companions[${companionCount}][nationality]" value="${companionData.nationality || ''}">
+            <input type="hidden" name="companions[${companionCount}][is_foreigner]" value="${companionData.is_foreigner === '1' ? '1' : '0'}">
             <input type="hidden" name="companions[${companionCount}][phone]" value="${companionData.phone || ''}">
             <input type="hidden" name="companions[${companionCount}][email]" value="${companionData.email || ''}">
         `;
@@ -545,14 +603,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         companionForm.reset();
         closeCompanionModal();
-    });
-
-    // Primary guest nationality toggle
-    const primaryGuestNationalityOption = document.getElementById('primaryGuestNationalityOption');
-    const primaryGuestNationalityTextField = document.getElementById('primaryGuestNationalityTextField');
-    
-    primaryGuestNationalityOption?.addEventListener('change', (e) => {
-        primaryGuestNationalityTextField.style.display = e.target.value === 'Foreign' ? 'flex' : 'none';
     });
 
     // Guest filter toggle
@@ -605,10 +655,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkInCompanionForm = document.getElementById('checkInCompanionForm');
     const checkInCompanionList = document.getElementById('checkInCompanionList');
     const checkInCompanionHiddenFields = document.getElementById('checkInCompanionHiddenFields');
-    const checkInCompanionNationalityOption = document.getElementById('checkInCompanionNationalityOption');
-    const checkInCompanionNationalityTextField = document.getElementById('checkInCompanionNationalityTextField');
-    const checkInPrimaryNationalityOption = document.getElementById('checkInPrimaryNationalityOption');
-    const checkInPrimaryNationalityTextField = document.getElementById('checkInPrimaryNationalityTextField');
+    const checkInCompanionIsForeigner = document.getElementById('checkInCompanionIsForeigner');
+    const checkInPrimaryIsForeigner = document.getElementById('checkInPrimaryIsForeigner');
 
     const openCheckInCompanionModal = () => {
         checkInCompanionModal.classList.add('is-open');
@@ -623,14 +671,6 @@ document.addEventListener('DOMContentLoaded', () => {
     checkInAddCompanionBtn?.addEventListener('click', openCheckInCompanionModal);
     checkInCompanionCloseButtons.forEach(button => {
         button.addEventListener('click', closeCheckInCompanionModal);
-    });
-
-    checkInCompanionNationalityOption?.addEventListener('change', (e) => {
-        checkInCompanionNationalityTextField.style.display = e.target.value === 'Foreign' ? 'flex' : 'none';
-    });
-
-    checkInPrimaryNationalityOption?.addEventListener('change', (e) => {
-        checkInPrimaryNationalityTextField.style.display = e.target.value === 'Foreign' ? 'flex' : 'none';
     });
 
     checkInCompanionForm?.addEventListener('submit', (e) => {
@@ -650,6 +690,15 @@ document.addEventListener('DOMContentLoaded', () => {
         checkInCompanionForm.reset();
         closeCheckInCompanionModal();
     });
+
+    // Primary guest nationality handling
+    const primaryGuestForm = document.getElementById('primaryGuestForm');
+    if (primaryGuestForm) {
+        const primaryGuestIsForeigner = document.getElementById('primaryGuestIsForeigner');
+        primaryGuestIsForeigner?.addEventListener('change', (e) => {
+            // Handle any UI changes if needed
+        });
+    }
 
     // Remove companion buttons
     document.addEventListener('click', (e) => {
