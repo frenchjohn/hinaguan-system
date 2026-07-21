@@ -97,25 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const primaryGuestMarkup = primaryGuest?.customer
                 ? `
                     <div class="guest-relationship-item guest-relationship-item--main">
-                        <div class="guest-relationship-label">Main Guest</div>
                         <div class="guest-relationship-name">${escapeHtml(primaryName)}</div>
                     </div>
                 `
                 : '';
 
-            const companionMarkup = companions.length
-                ? companions.map((companionGuest) => {
-                    const companionName = companionGuest.customer
-                        ? [companionGuest.customer.first_name, companionGuest.customer.last_name].filter(Boolean).join(' ').trim()
-                        : 'N/A';
-                    return `
-                        <div class="guest-relationship-item guest-relationship-item--companion">
-                            <div class="guest-relationship-label">Companion</div>
-                            <div class="guest-relationship-name">${escapeHtml(companionName)}</div>
-                        </div>
-                    `;
-                }).join('')
-                : '<div class="guest-relationship-item guest-relationship-item--companion guest-relationship-item--empty"><div class="guest-relationship-label">Companion</div><div class="guest-relationship-name">No companions listed.</div></div>';
+            // Hide companions - only show main guest
+            const companionMarkup = '';
 
             return `
                 <div class="guest-card">
@@ -133,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                     <div style="margin-bottom: 1rem;">
-                        <span class="guest-label">Guests</span>
+                        <span class="guest-label">Main Guest</span>
                         <div class="guest-relationship-list">
                             ${primaryGuestMarkup}
                             ${companionMarkup}
@@ -299,34 +287,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const primaryGuest = reservation.reservation_guests.find(g => g.is_primary_guest);
-        const companions = reservation.reservation_guests.filter(g => !g.is_primary_guest);
+        const companions = reservation.reservation_guests.filter(g => !g.is_primary_guest && g.checked_out_at);
 
         let html = `
             <div style="margin-bottom: 1.5rem;">
-                <h4 style="margin-bottom: 0.5rem; font-weight: 600;">Main Guest</h4>
-                <div style="padding: 1rem; background-color: #f5f5f5; border-radius: 0.5rem;">
+                <h4 style="margin-bottom: 0.5rem; font-weight: 600; color: var(--hp-text);">Main Guest</h4>
+                <div style="padding: 1rem; background-color: var(--hp-cream); border-radius: 0.5rem;">
                     ${primaryGuest && primaryGuest.customer ? `
                         <div><strong>${escapeHtml(primaryGuest.customer.first_name)} ${escapeHtml(primaryGuest.customer.middle_name || '')} ${escapeHtml(primaryGuest.customer.last_name)}</strong></div>
-                        <div style="font-size: 0.875rem; color: #666;">Age: ${escapeHtml(primaryGuest.customer.age || 'N/A')} | Gender: ${escapeHtml(primaryGuest.customer.gender || 'N/A')} | Status: ${escapeHtml(primaryGuest.customer.is_foreigner ? 'Foreigner' : 'Filipino')}</div>
-                        <div style="font-size: 0.875rem; color: #666; margin-top: 0.5rem;">Checked Out: ${escapeHtml(primaryGuest.checked_out_at ? formatDateTime(primaryGuest.checked_out_at) : 'Not yet')}</div>
-                    ` : '<div>No main guest assigned</div>'}
+                        <div style="font-size: 0.875rem; color: var(--hp-text-muted);">Age: ${escapeHtml(primaryGuest.customer.age || 'N/A')} | Gender: ${escapeHtml(primaryGuest.customer.gender || 'N/A')} | Status: ${escapeHtml(primaryGuest.customer.is_foreigner ? 'Foreigner' : 'Filipino')}</div>
+                        <div style="font-size: 0.875rem; color: var(--hp-text-muted); margin-top: 0.5rem;">Checked Out: ${escapeHtml(primaryGuest.checked_out_at ? formatDateTime(primaryGuest.checked_out_at) : 'Not yet')}</div>
+                    ` : '<div style="color: var(--hp-text);">No main guest assigned</div>'}
                 </div>
             </div>
         `;
 
         if (companions.length > 0) {
-            html += `
-                <div style="margin-bottom: 1.5rem;">
-                    <h4 style="margin-bottom: 0.5rem; font-weight: 600;">Companions (${companions.length})</h4>
-                    ${companions.map(c => `
-                        <div style="padding: 0.75rem; background-color: #f5f5f5; border-radius: 0.5rem; margin-bottom: 0.5rem;">
-                            <div><strong>${escapeHtml(c.customer.first_name)} ${escapeHtml(c.customer.middle_name || '')} ${escapeHtml(c.customer.last_name)}</strong></div>
-                            <div style="font-size: 0.875rem; color: #666;">Age: ${escapeHtml(c.customer.age || 'N/A')} | Gender: ${escapeHtml(c.customer.gender || 'N/A')} | Status: ${escapeHtml(c.customer.is_foreigner ? 'Foreigner' : 'Filipino')}</div>
-                            <div style="font-size: 0.875rem; color: #666; margin-top: 0.5rem;">Checked Out: ${escapeHtml(c.checked_out_at ? formatDateTime(c.checked_out_at) : 'Not yet')}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+            // Group companions by age, gender, and nationality
+            const companionGroups = {};
+            companions.forEach(c => {
+                if (!c.customer) return;
+                
+                const age = c.customer.age || 'N/A';
+                const gender = c.customer.gender || 'N/A';
+                const nationality = c.customer.is_foreigner ? 'Foreigner' : 'Filipino';
+                const key = `${age}|${gender}|${nationality}`;
+                
+                if (!companionGroups[key]) {
+                    companionGroups[key] = {
+                        age,
+                        gender,
+                        nationality,
+                        count: 0
+                    };
+                }
+                companionGroups[key].count++;
+            });
+
+            const groupEntries = Object.entries(companionGroups);
+            
+            if (groupEntries.length > 0) {
+                html += `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="margin-bottom: 0.5rem; font-weight: 600; color: var(--hp-text);">Companions (${companions.length})</h4>
+                        ${groupEntries.map(([key, group]) => `
+                            <div style="padding: 0.75rem; background-color: var(--hp-cream); border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                                <div><strong style="color: var(--hp-text);">Age: ${escapeHtml(group.age)}, Gender: ${escapeHtml(group.gender)}, Nationality: ${escapeHtml(group.nationality)}</strong></div>
+                                <div style="font-size: 0.875rem; color: var(--hp-text-muted);">Quantity: ${group.count}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
         }
 
         if (reservation.reservation_amenities && reservation.reservation_amenities.length > 0) {

@@ -133,12 +133,29 @@
 								<input type="date" id="guestCheckInTo">
 							</label>
 							<label class="guest-toolbar__field">
-								<span>Check-out from</span>
-								<input type="date" id="guestCheckOutFrom">
-							</label>
-							<label class="guest-toolbar__field">
-								<span>Check-out to</span>
-								<input type="date" id="guestCheckOutTo">
+								<span>Reservation ID</span>
+								<select id="guestReservationSelect">
+									<option value="">All Reservations</option>
+									@php
+										$activeReservations = collect($reservations ?? collect())->filter(function ($reservation) {
+											$status = strtolower(str_replace(' ', '_', (string) ($reservation->status ?? '')));
+											return $status !== 'checked_out' && $status !== 'checkedout' && $status !== 'checked-out' && $reservation->check_in;
+										});
+									@endphp
+									@forelse ($activeReservations as $reservation)
+										@php
+											$primaryGuest = $reservation->reservationGuests->first(function ($guest) {
+												return $guest->is_primary_guest && $guest->customer;
+											});
+											$primaryGuestName = $primaryGuest?->customer ? 
+												trim(($primaryGuest->customer->first_name ?? '') . ' ' . ($primaryGuest->customer->last_name ?? '')) : 
+												$reservation->booker_name ?? 'Unknown';
+										@endphp
+										<option value="{{ $reservation->id }}">#{{ $reservation->id }} - {{ $primaryGuestName }}</option>
+									@empty
+										{{-- No active reservations --}}
+									@endforelse
+								</select>
 							</label>
 							<button type="button" class="guest-toolbar__clear" id="guestFiltersClear">Clear</button>
 						</div>
@@ -191,6 +208,7 @@
 									<tr
 										class="guest-row"
 										data-customer-id="{{ $customer->id }}"
+										data-reservation-id="{{ $reservationEntry?->reservation?->id ?? '' }}"
 										data-age="{{ $customer->age ?? 'N/A' }}"
 										data-gender="{{ strtolower((string) ($customer->gender ?? 'N/A')) }}"
 											data-check-in="{{ $reservationEntry?->reservation?->check_in ?? '' }}"

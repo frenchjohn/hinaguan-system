@@ -608,11 +608,40 @@ document.addEventListener('DOMContentLoaded', () => {
     // Guest filter toggle
     const guestFilterToggle = document.getElementById('guestFilterToggle');
     const guestFilterPanel = document.getElementById('guestFilterPanel');
+    const guestReservationSelect = document.getElementById('guestReservationSelect');
     
     guestFilterToggle?.addEventListener('click', () => {
         const isExpanded = guestFilterToggle.getAttribute('aria-expanded') === 'true';
         guestFilterToggle.setAttribute('aria-expanded', !isExpanded);
         guestFilterPanel.hidden = isExpanded;
+    });
+
+    // Reservation filter functionality
+    guestReservationSelect?.addEventListener('change', () => {
+        const selectedReservationId = guestReservationSelect.value;
+        const guestRows = document.querySelectorAll('#guestTableBody .guest-row');
+        
+        guestRows.forEach(row => {
+            if (selectedReservationId === '') {
+                // Show all guests when "All Reservations" is selected
+                row.style.display = '';
+            } else {
+                // Check if this guest belongs to the selected reservation
+                const rowReservationId = row.dataset.reservationId;
+                if (rowReservationId === selectedReservationId) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+        
+        // Update results count
+        const visibleRows = Array.from(guestRows).filter(row => row.style.display !== 'none');
+        const resultsCount = document.getElementById('guestResultsCount');
+        if (resultsCount) {
+            resultsCount.textContent = `Showing ${visibleRows.length} active guests`;
+        }
     });
 
     // Scan QR modal
