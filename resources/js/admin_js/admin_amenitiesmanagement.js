@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
         description: document.getElementById('description'),
         image: document.getElementById('image'),
         status: document.getElementById('status'),
+        sale_percentage: document.getElementById('sale_percentage'),
     };
 
     const dropZone = document.getElementById('imageDropZone');
@@ -129,10 +130,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const amenityId = row.dataset.amenityId;
         const data = {
             amenities_name: row.dataset.amenitiesName,
-            daytime_price: row.dataset.daytimePrice || row.querySelector('td:nth-child(2)').textContent.trim(),
-            nighttime_price: row.dataset.nighttimePrice || row.querySelector('td:nth-child(3)').textContent.trim(),
-            daytime_aircon_price: row.dataset.daytimeAirconPrice || '',
-            nighttime_aircon_price: row.dataset.nighttimeAirconPrice || '',
+            daytime_price: row.dataset.originalDaytimePrice || row.dataset.daytimePrice || row.querySelector('td:nth-child(2)').textContent.trim(),
+            nighttime_price: row.dataset.originalNighttimePrice || row.dataset.nighttimePrice || row.querySelector('td:nth-child(3)').textContent.trim(),
+            daytime_aircon_price: row.dataset.originalDaytimeAirconPrice || row.dataset.daytimeAirconPrice || '',
+            nighttime_aircon_price: row.dataset.originalNighttimeAirconPrice || row.dataset.nighttimeAirconPrice || '',
             additional_per_head: row.dataset.additionalPerHead || '',
             minimum_capacity: row.dataset.minimumCapacity || '',
             maximum_capacity: row.dataset.maximumCapacity || '',
@@ -140,6 +141,7 @@ document.addEventListener('DOMContentLoaded', function () {
             imageUrl: row.dataset.imageUrl || '',
             imagePath: row.dataset.imagePath || '',
             status: row.dataset.status || 'enabled',
+            sale_percentage: row.dataset.salePercentage || '0',
         };
 
         const baseUrl = form.dataset.updateBaseUrl;
@@ -165,6 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
         fields.maximum_capacity.value = data.maximum_capacity;
         fields.description.value = data.description;
         fields.status.value = data.status;
+        fields.sale_percentage.value = data.sale_percentage;
         
         document.getElementById('existingImage').value = data.imagePath || '';
         imageFileName.textContent = data.imageUrl ? data.imageUrl.split('/').pop() : 'No file chosen';

@@ -354,6 +354,8 @@
 
                             $maxPrice = collect([$amenity->daytime_price, $amenity->nighttime_price])->filter()->max();
 
+                            $hasSale = $amenity->sale_percentage && $amenity->sale_percentage > 0;
+
                         @endphp
 
                         <article class="rp-card"
@@ -386,7 +388,17 @@
 
                             data-additional="{{ $amenity->additional_per_head ?? '0' }}"
 
-                            data-description="{{ $amenity->description ?? '' }}">
+                            data-description="{{ $amenity->description ?? '' }}"
+
+                            data-sale-percentage="{{ $amenity->sale_percentage ?? 0 }}"
+
+                            data-original-daytime-price="{{ $amenity->original_daytime_price ?? $amenity->daytime_price }}"
+
+                            data-original-nighttime-price="{{ $amenity->original_nighttime_price ?? $amenity->nighttime_price }}"
+
+                            data-original-daytime-aircon-price="{{ $amenity->original_daytime_aircon_price ?? $amenity->daytime_aircon_price }}"
+
+                            data-original-nighttime-aircon-price="{{ $amenity->original_nighttime_aircon_price ?? $amenity->nighttime_aircon_price }}">
 
                             <button type="button" class="rp-card__button" data-open-modal>
 
@@ -405,6 +417,10 @@
                                     <span>{{ $amenity->amenities_name }}</span>
 
                                 </div>
+
+                                @if($hasSale)
+                                    <div class="rp-card__sale-badge">{{ $amenity->sale_percentage }}% OFF</div>
+                                @endif
 
                             </button>
 
@@ -523,6 +539,14 @@
                                 <strong id="modalPriceValue">&#8369;0.00</strong>
 
                                 <p id="modalPriceHint"></p>
+
+                                <div id="modalSaleInfo" class="rp-modal__sale-info" style="display: none;">
+
+                                    <span class="rp-modal__original-price" id="modalOriginalPrice">&#8369;0.00</span>
+
+                                    <span class="rp-modal__sale-percentage" id="modalSalePercentage">0% OFF</span>
+
+                                </div>
 
                             </div>
 

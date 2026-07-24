@@ -461,6 +461,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'file', 'image', 'max:4096'],
             'status' => ['nullable', 'in:enabled,disabled'],
+            'sale_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $imagePath = null;
@@ -468,19 +469,36 @@ Route::prefix('admin')->name('admin.')->group(function () {
             $imagePath = $request->file('image')->store('amenities_images', 'public');
         }
 
+        $salePercentage = $data['sale_percentage'] ?? 0;
+        $daytimePrice = $data['daytime_price'];
+        $nighttimePrice = $data['nighttime_price'];
+        $daytimeAirconPrice = $data['daytime_aircon_price'] ?? null;
+        $nighttimeAirconPrice = $data['nighttime_aircon_price'] ?? null;
+
+        // Calculate current prices based on sale percentage
+        $currentDaytimePrice = $salePercentage > 0 ? $daytimePrice * (1 - $salePercentage / 100) : $daytimePrice;
+        $currentNighttimePrice = $salePercentage > 0 ? $nighttimePrice * (1 - $salePercentage / 100) : $nighttimePrice;
+        $currentDaytimeAirconPrice = $daytimeAirconPrice && $salePercentage > 0 ? $daytimeAirconPrice * (1 - $salePercentage / 100) : $daytimeAirconPrice;
+        $currentNighttimeAirconPrice = $nighttimeAirconPrice && $salePercentage > 0 ? $nighttimeAirconPrice * (1 - $salePercentage / 100) : $nighttimeAirconPrice;
+
         Amenity::create([
             'id' => Str::uuid(),
             'amenities_name' => $data['amenities_name'],
-            'daytime_price' => $data['daytime_price'],
-            'nighttime_price' => $data['nighttime_price'],
-            'daytime_aircon_price' => $data['daytime_aircon_price'] ?? null,
-            'nighttime_aircon_price' => $data['nighttime_aircon_price'] ?? null,
+            'daytime_price' => $currentDaytimePrice,
+            'nighttime_price' => $currentNighttimePrice,
+            'daytime_aircon_price' => $currentDaytimeAirconPrice,
+            'nighttime_aircon_price' => $currentNighttimeAirconPrice,
+            'original_daytime_price' => $daytimePrice,
+            'original_nighttime_price' => $nighttimePrice,
+            'original_daytime_aircon_price' => $daytimeAirconPrice,
+            'original_nighttime_aircon_price' => $nighttimeAirconPrice,
             'additional_per_head' => $data['additional_per_head'] ?? null,
             'minimum_capacity' => $data['minimum_capacity'] ?? null,
             'maximum_capacity' => $data['maximum_capacity'] ?? null,
             'description' => $data['description'] ?? null,
             'image' => $imagePath,
             'status' => ($data['status'] ?? 'enabled') === 'enabled',
+            'sale_percentage' => $salePercentage,
         ]);
 
         return redirect()->route('admin.amenities')->with('success', 'Amenity created successfully.');
@@ -505,6 +523,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             'image' => ['nullable', 'file', 'image', 'max:4096'],
             'existing_image' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'in:enabled,disabled'],
+            'sale_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $imagePath = $data['existing_image'] ?? $amenity->image;
@@ -515,18 +534,35 @@ Route::prefix('admin')->name('admin.')->group(function () {
             $imagePath = $request->file('image')->store('amenities_images', 'public');
         }
 
+        $salePercentage = $data['sale_percentage'] ?? 0;
+        $daytimePrice = $data['daytime_price'];
+        $nighttimePrice = $data['nighttime_price'];
+        $daytimeAirconPrice = $data['daytime_aircon_price'] ?? null;
+        $nighttimeAirconPrice = $data['nighttime_aircon_price'] ?? null;
+
+        // Calculate current prices based on sale percentage
+        $currentDaytimePrice = $salePercentage > 0 ? $daytimePrice * (1 - $salePercentage / 100) : $daytimePrice;
+        $currentNighttimePrice = $salePercentage > 0 ? $nighttimePrice * (1 - $salePercentage / 100) : $nighttimePrice;
+        $currentDaytimeAirconPrice = $daytimeAirconPrice && $salePercentage > 0 ? $daytimeAirconPrice * (1 - $salePercentage / 100) : $daytimeAirconPrice;
+        $currentNighttimeAirconPrice = $nighttimeAirconPrice && $salePercentage > 0 ? $nighttimeAirconPrice * (1 - $salePercentage / 100) : $nighttimeAirconPrice;
+
         $amenity->update([
             'amenities_name' => $data['amenities_name'],
-            'daytime_price' => $data['daytime_price'],
-            'nighttime_price' => $data['nighttime_price'],
-            'daytime_aircon_price' => $data['daytime_aircon_price'] ?? null,
-            'nighttime_aircon_price' => $data['nighttime_aircon_price'] ?? null,
+            'daytime_price' => $currentDaytimePrice,
+            'nighttime_price' => $currentNighttimePrice,
+            'daytime_aircon_price' => $currentDaytimeAirconPrice,
+            'nighttime_aircon_price' => $currentNighttimeAirconPrice,
+            'original_daytime_price' => $daytimePrice,
+            'original_nighttime_price' => $nighttimePrice,
+            'original_daytime_aircon_price' => $daytimeAirconPrice,
+            'original_nighttime_aircon_price' => $nighttimeAirconPrice,
             'additional_per_head' => $data['additional_per_head'] ?? null,
             'minimum_capacity' => $data['minimum_capacity'] ?? null,
             'maximum_capacity' => $data['maximum_capacity'] ?? null,
             'description' => $data['description'] ?? null,
             'image' => $imagePath,
             'status' => ($data['status'] ?? 'enabled') === 'enabled',
+            'sale_percentage' => $salePercentage,
         ]);
 
         return redirect()->route('admin.amenities')->with('success', 'Amenity updated successfully.');

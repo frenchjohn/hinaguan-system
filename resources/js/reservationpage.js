@@ -190,6 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const modalPriceHint = document.getElementById('modalPriceHint');
 
+    const modalSaleInfo = document.getElementById('modalSaleInfo');
+
+    const modalOriginalPrice = document.getElementById('modalOriginalPrice');
+
+    const modalSalePercentage = document.getElementById('modalSalePercentage');
+
     const modalDescription = document.getElementById('modalDescription');
 
     const airconChoice = document.getElementById('airconChoice');
@@ -1255,6 +1261,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? 'Air-conditioned pricing for this booking slot.'
 
                 : 'Standard pricing for this booking slot.';
+
+            // Handle sale display
+            const salePercentage = parseFloat(card.dataset.salePercentage) || 0;
+            if (salePercentage > 0) {
+                const originalPrice = isAircon
+                    ? (card.dataset.originalDaytimeAirconPrice || card.dataset.originalNighttimeAirconPrice || selectedPrice)
+                    : (card.dataset.originalDaytimePrice || card.dataset.originalNighttimePrice || selectedPrice);
+                modalSaleInfo.style.display = 'flex';
+                modalOriginalPrice.textContent = `₱${parseFloat(originalPrice).toFixed(2)}`;
+                modalSalePercentage.textContent = `${salePercentage}% OFF`;
+            } else {
+                modalSaleInfo.style.display = 'none';
+            }
 
             modalDescription.textContent = card.dataset.description || 'No additional details available.';
 

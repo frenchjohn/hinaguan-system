@@ -190,6 +190,20 @@
     color: #dc2626;
 }
 
+.badge--sale {
+    background: rgba(234, 179, 8, 0.15);
+    color: #ca8a04;
+    border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.amenity-row--sale {
+    background: rgba(234, 179, 8, 0.08);
+}
+
+.amenity-row--sale:hover {
+    background: rgba(234, 179, 8, 0.15) !important;
+}
+
 .amenities-actions {
     display: flex;
     gap: 0.75rem;

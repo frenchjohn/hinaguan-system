@@ -21,12 +21,17 @@ class Amenity extends Model
         'nighttime_price',
         'daytime_aircon_price',
         'nighttime_aircon_price',
+        'original_daytime_price',
+        'original_nighttime_price',
+        'original_daytime_aircon_price',
+        'original_nighttime_aircon_price',
         'additional_per_head',
         'minimum_capacity',
         'maximum_capacity',
         'description',
         'image',
         'status',
+        'sale_percentage',
     ];
 
     protected $casts = [

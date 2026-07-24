@@ -87,6 +87,7 @@
                                 <th>Night price</th>
                                 <th>Min cap</th>
                                 <th>Max cap</th>
+                                <th>Sale %</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -107,12 +108,39 @@
                                     data-image-url="{{ $amenity->image ? e(asset('storage/' . $amenity->image)) : '' }}"
                                     data-image-path="{{ $amenity->image ?? '' }}"
                                     data-status="{{ $amenity->status ? 'enabled' : 'disabled' }}"
+                                    data-sale-percentage="{{ $amenity->sale_percentage ?? 0 }}"
+                                    data-original-daytime-price="{{ $amenity->original_daytime_price ?? $amenity->daytime_price }}"
+                                    data-original-nighttime-price="{{ $amenity->original_nighttime_price ?? $amenity->nighttime_price }}"
+                                    data-original-daytime-aircon-price="{{ $amenity->original_daytime_aircon_price ?? $amenity->daytime_aircon_price }}"
+                                    data-original-nighttime-aircon-price="{{ $amenity->original_nighttime_aircon_price ?? $amenity->nighttime_aircon_price }}"
+                                    class="amenity-row {{ $amenity->sale_percentage && $amenity->sale_percentage > 0 ? 'amenity-row--sale' : '' }}"
                                 >
                                     <td>{{ $amenity->amenities_name }}</td>
-                                    <td>{{ $amenity->daytime_price }}</td>
-                                    <td>{{ $amenity->nighttime_price }}</td>
+                                    <td>
+                                        @if($amenity->sale_percentage && $amenity->sale_percentage > 0)
+                                            <span style="text-decoration: line-through; color: var(--hp-text-muted); margin-right: 0.5rem;">{{ $amenity->original_daytime_price ?? $amenity->daytime_price }}</span>
+                                            <span style="color: var(--hp-green-dark); font-weight: 600;">{{ number_format($amenity->daytime_price, 2) }}</span>
+                                        @else
+                                            {{ number_format($amenity->daytime_price, 2) }}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($amenity->sale_percentage && $amenity->sale_percentage > 0)
+                                            <span style="text-decoration: line-through; color: var(--hp-text-muted); margin-right: 0.5rem;">{{ $amenity->original_nighttime_price ?? $amenity->nighttime_price }}</span>
+                                            <span style="color: var(--hp-green-dark); font-weight: 600;">{{ number_format($amenity->nighttime_price, 2) }}</span>
+                                        @else
+                                            {{ number_format($amenity->nighttime_price, 2) }}
+                                        @endif
+                                    </td>
                                     <td>{{ $amenity->minimum_capacity !== null && $amenity->minimum_capacity !== '' ? $amenity->minimum_capacity : 'none' }}</td>
                                     <td>{{ $amenity->maximum_capacity !== null && $amenity->maximum_capacity !== '' ? $amenity->maximum_capacity : 'none' }}</td>
+                                    <td>
+                                        @if($amenity->sale_percentage && $amenity->sale_percentage > 0)
+                                            <span class="badge badge--sale">{{ $amenity->sale_percentage }}% OFF</span>
+                                        @else
+                                            <span>—</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         <span class="badge {{ $amenity->status ? 'badge--enabled' : 'badge--disabled' }}">
                                             {{ $amenity->status ? 'Enabled' : 'Disabled' }}
@@ -121,7 +149,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="table-empty">No amenities found yet.</td>
+                                    <td colspan="7" class="table-empty">No amenities found yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -156,23 +184,27 @@
                 </div>
 
                 <div class="modal-form__row">
-                    <label for="daytime_price">Daytime Price <span>*</span></label>
+                    <label for="daytime_price">Original Daytime Price <span>*</span></label>
                     <input id="daytime_price" name="daytime_price" type="number" step="0.01" min="0" inputmode="decimal" required>
+                    <small style="color: var(--hp-text-muted); font-size: 0.8rem;">Base price before sale discount</small>
                 </div>
 
                 <div class="modal-form__row">
-                    <label for="nighttime_price">Nighttime Price <span>*</span></label>
+                    <label for="nighttime_price">Original Nighttime Price <span>*</span></label>
                     <input id="nighttime_price" name="nighttime_price" type="number" step="0.01" min="0" inputmode="decimal" required>
+                    <small style="color: var(--hp-text-muted); font-size: 0.8rem;">Base price before sale discount</small>
                 </div>
 
                 <div class="modal-form__row">
-                    <label for="daytime_aircon_price">Daytime Aircon Price</label>
+                    <label for="daytime_aircon_price">Original Daytime Aircon Price</label>
                     <input id="daytime_aircon_price" name="daytime_aircon_price" type="number" step="0.01" min="0" inputmode="decimal">
+                    <small style="color: var(--hp-text-muted); font-size: 0.8rem;">Base price before sale discount</small>
                 </div>
 
                 <div class="modal-form__row">
-                    <label for="nighttime_aircon_price">Nighttime Aircon Price</label>
+                    <label for="nighttime_aircon_price">Original Nighttime Aircon Price</label>
                     <input id="nighttime_aircon_price" name="nighttime_aircon_price" type="number" step="0.01" min="0" inputmode="decimal">
+                    <small style="color: var(--hp-text-muted); font-size: 0.8rem;">Base price before sale discount</small>
                 </div>
 
                 <div class="modal-form__row">
@@ -210,6 +242,11 @@
                         <option value="enabled">Enabled</option>
                         <option value="disabled">Disabled</option>
                     </select>
+                </div>
+
+                <div class="modal-form__row">
+                    <label for="sale_percentage">Sale Percentage (%)</label>
+                    <input id="sale_percentage" name="sale_percentage" type="number" step="0.01" min="0" max="100" inputmode="decimal" placeholder="0 = no sale">
                 </div>
 
                 <div class="modal-form__actions">
